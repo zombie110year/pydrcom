@@ -2,13 +2,11 @@
 
 PyDrcom 是一个使用 Python3 的 Drcom 第三方客户端. 适用于 **无线连接**.
 
-属于个人学习作品.
-
 参考了 [drcom-generic](https://github.com/drcoms/drcom-generic/)
 
 # 使用方法
 
-从 drcom 目录中拷贝出来文件, 将配置项填写好, 然后直接运行即可.
+从 drcom 目录中拷贝出来文件, 将配置项填写好, 然后直接运行即可. 配置文件应当和脚本处于同一目录, 或者自行在脚本中添加 `sys.path`.
 
 ## 配置条目
 
@@ -46,11 +44,9 @@ SALT = ''
 
 # 待办
 
-- [ ] 完成 wire 模块
+- [x] 完成 wire 模块
 - [ ] 完成 lan 模块
 - [ ] config 模块
     - [ ] 自动检测 Drcom 认证服务器地址
-    - [ ]
-
-- [ ] 测试 Windows
+- [x] 测试 Windows
 - [ ] 测试 Linux
