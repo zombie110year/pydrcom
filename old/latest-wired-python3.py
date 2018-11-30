@@ -73,10 +73,25 @@ s.bind((bind_ip, 61440))
 s.settimeout(3)
 
 SALT = ''
+IS_TEST = True
+
+# specified fields based on version
+CONF = "/etc/drcom.conf"
+UNLIMITED_RETRY = True
+EXCEPTION = False
+DEBUG = False #log saves to file
+LOG_PATH = '/tmp/drcom_client.log'
+if IS_TEST:
+    DEBUG = True
+    LOG_PATH = 'drcom_client.log'
+
 
 def log(*args, **kwargs):
     s = ' '.join(args)
     print(s)
+    if DEBUG:
+        with open(LOG_PATH, 'a') as f:
+            f.write(s + '\n')
 
 def md5sum(s):
     m = md5()
@@ -102,10 +117,7 @@ def challenge(svr,ran):
         s.sendto(b"\x01\x02" + t + b"\x09" + b"\x00"*15, (svr, 61440))
         try:
             data, address = s.recvfrom(1024)
-            log(
-                '[challenge] recv',
-                str(binascii.hexlify(data))[2:][:-1]
-            )
+            log('[challenge] recv', str(binascii.hexlify(data))[2:][:-1])
         except Exception as e:
             raise(e)
             log('[challenge] timeout, retrying...')
@@ -121,9 +133,7 @@ def challenge(svr,ran):
     log('[challenge] challenge packet sent.')
     return data[4:8]
 
-def keep_alive_package_builder(number,
-random,tail,type=1,
-first=False):
+def keep_alive_package_builder(number,random,tail,type=1,first=False):
     data = b'\x07'+ bytes([number]) + b'\x28\x00\x0B' + bytes([type])
     if first :
         data += b'\x0F\x27'
@@ -378,13 +388,17 @@ def login(usr, pwd, svr):
         if address == (svr, 61440):
             if data[:1] == b'\x04':
                 log('[login] loged in')
+                AUTH_INFO = data[23:39]
                 break
             else:
                 log('[login] login failed.')
-                time.sleep(30)
+                if IS_TEST:
+                    time.sleep(3)
+                else:
+                    time.sleep(30)
                 continue
         else:
-            if i >= 5:
+            if i >= 5 and UNLIMITED_RETRY == False :
                 log('[login] exception occured.')
                 sys.exit(1)
             else:
@@ -444,9 +458,11 @@ def empty_socket_buffer():
 def daemon():
     with open('/var/run/jludrcom.pid','w') as f:
         f.write(str(os.getpid()))
-
+        
 def main():
-    daemon()
+    if not IS_TEST:
+        daemon()
+        execfile(CONF, globals())
     log("auth svr: " + server + "\nusername: " + username + "\npassword: " + password + "\nmac: " + str(hex(mac))[:-1])
     log("bind ip: " + bind_ip)
     while True:
