@@ -116,7 +116,7 @@ class Drcom:
 
             log('[challenge] challenge packet sent.')
 
-            return data[4:8]
+        return data[4:8]
 
     def makeKeepAlivePackage(self, num, tail, type_=1, first=False):
         data = []
@@ -188,7 +188,7 @@ class Drcom:
         data.append(b'\x01\x00\x00\x00')
         data.append(b'\x28\x0A\x00\x00')
         data.append(b'\x02\x00\x00\x00')
-        data.append(self.host_os.encode() + 32*b'\x00')[:32]
+        data.append((self.host_os.encode() + 32*b'\x00')[:32])
         data.append(b'\x00'*96)
         data.append(self.AUTH_VERSION)
         if self.ror_version:
@@ -430,7 +430,7 @@ class Drcom:
             """.format(
                 server=self.server,
                 username=self.username,
-                password=self.password,
+                password='*'*len(self.password),
                 mac=self.mac,
                 ip=self.bind_ip,
                 port=self.port
