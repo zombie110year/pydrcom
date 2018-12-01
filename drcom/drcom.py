@@ -57,9 +57,16 @@ def daemon():
         file.write(str(os.getpid()))
 
 class Drcom:
+    """
+    Drcom 客户端运行所需要的一切
 
-    def readConf(self):
-        import conf as conf
+    Para
+    ----
+
+    - ``conf`` 处理后的配置项. 将从 conf 的属性读取配置, 例如 conf.username 等.
+    """
+
+    def readConf(self, conf):
         self.username           = conf.username
         self.password           = conf.password
         self.server             = conf.server
@@ -83,8 +90,8 @@ class Drcom:
         self.ror_version        = conf.ror_version
         del conf
 
-    def __init__(self):
-        self.readConf()
+    def __init__(self, conf):
+        self.readConf(conf)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.bind_ip, self.port))
         self.socket.settimeout(3)
@@ -449,8 +456,3 @@ class Drcom:
             self.emptySocketBuffer()
             self.keepAlive1(package_tail)
             self.keepAlive2(package_tail)
-
-if __name__ == "__main__":
-    app = Drcom()
-    app.run()
-

@@ -50,7 +50,5 @@ SALT = ''
 - [ ] 完成 lan 模块
 - [ ] config 模块
     - [ ] 自动检测 Drcom 认证服务器地址
-    - [ ]
-
 - [ ] 测试 Windows
 - [ ] 测试 Linux
