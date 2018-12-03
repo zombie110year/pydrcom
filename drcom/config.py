@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from os.path import exists
 
-config_template = """
+config_template = r"""
 # 登陆校园网的账号密码
 username = "example"
 password = "passwd"

@@ -1,0 +1,11 @@
+                                    PyDrcom
+================================================================================
+
+PyDrcom 是一个在命令行使用的 Python 脚本, 使用 drcom 命令启动, 可使用 Ctrl+C 直
+接结束.
+
+PROJ
+----
+
+本项目大量代码来自 drcom-generic 项目, 访问其网站: 
+                                        https://github.com/drcoms/drcom-generic
