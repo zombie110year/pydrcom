@@ -6,49 +6,39 @@ PyDrcom 是一个使用 Python3 的 Drcom 第三方客户端. 适用于 **无线
 
 参考了 [drcom-generic](https://github.com/drcoms/drcom-generic/)
 
+# 安装
+
+```sh
+git clone https://github.com/zombie110year/pydrcom.git
+cd pydrcom
+python setup.py install --user
+```
+
 # 使用方法
 
-从 drcom 目录中拷贝出来文件, 将配置项填写好, 然后直接运行即可.
+编辑配置文件后, 运行程序.
+
+```sh
+drcom -h # 查看使用方法
+drcom # 直接运行
+```
 
 ## 配置条目
 
-```python
-## 用户名与密码
-username = None
-password = None
+使用以下命令生成配置文件模板, 产生的文件在当前工作目录下.
 
-## 连接方式, 可选 wire(无线网络), lan(有线连接)
-CONNECTION_MODE = None
-
-## 网络配置
-server = None
-dns = "8.8.8.8"
-dhcp_server = '0.0.0.0'
-host_name = "MyComputer"
-host_os = "MySystem"
-mac = 0x1
-bind_ip = "0.0.0.0"
-port = 61440
-
-## 日志保存
-## 若 LOG_ALLWAYS_SAVE = True, 则所有输出至 stdout,stderr 的内容都会保存到 LOG_FILE
-LOG_FILE = None
-LOG_ALLWAYS_SAVE = False
-
-## Drcom 客户端伪装
-CONTROLCHECKSTATUS = b'\x20'
-ADAPTERNUM = b'\x07'
-KEEP_ALIVE_VERSION = b'\xdc\x02'
-AUTH_VERSION = b'\x0a\x00'
-IPDOG = b'\x01'
-SALT = ''
+```sh
+drcom --generate-config
 ```
 
 # 待办
 
-- [ ] 完成 wire 模块
+- [x] 完成 wire 模块
 - [ ] 完成 lan 模块
 - [ ] config 模块
+    - [x] 生成配置文件模板
     - [ ] 自动检测 Drcom 认证服务器地址
 - [ ] 测试 Windows
+    - [x] Windows 10
 - [ ] 测试 Linux
+    - [x] Ubuntu 16.04 LTS amd64
