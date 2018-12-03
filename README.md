@@ -40,3 +40,7 @@ drcom --generate-config
     - [x] Windows 10
 - [ ] 测试 Linux
     - [x] Ubuntu 16.04 LTS amd64
+
+# 开源协议
+
+[GPLv3](LICENSE)
