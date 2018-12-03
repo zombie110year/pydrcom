@@ -2,8 +2,6 @@
 
 PyDrcom 是一个使用 Python3 的 Drcom 第三方客户端. 适用于 **无线连接**.
 
-属于个人学习作品.
-
 参考了 [drcom-generic](https://github.com/drcoms/drcom-generic/)
 
 # 安装
