@@ -295,7 +295,7 @@ class Drcom:
                     str(binascii.hexlify(data))[2:][:-1]
                 )
 
-        log('[keep-alive2] recv3', str(binascii.hexlify(data))[2:][:-1])
+        log('[keepAlive2] recv3', str(binascii.hexlify(data))[2:][:-1])
 
         tail = data[16:20]
 
