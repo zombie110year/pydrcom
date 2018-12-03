@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from os.path import exists
+from os import environ
 
 config_template = r"""
 # 登陆校园网的账号密码
@@ -56,7 +57,8 @@ def getCliArgs():
         dest="config_file",
         help="指定配置文件 优先级 当前目录 > ~/.config/drcom/ > /etc/drcom 中的 drcom.conf",
         required=False,
-        metavar="path/to/drcom.conf"
+        metavar="path/to/drcom.conf",
+        default=""
     )
     parser.add_argument(
         "--generate-config",
@@ -74,18 +76,24 @@ def getConfigFileContent(path):
     paths = (
         path,
         "./drcom.conf",
-        "~/.config/drcom/drcom_conf.py",
-        "/etc/drcom/drcom_conf.py"
+        "~/.config/drcom/drcom.conf",
+        "{APPDATA}\\drcom\\drcom.conf".format(APPDATA=environ.get('APPDATA')), # Windows 系统下调用 cmd 查找路径不能识别 ~ 符号
+        "/etc/drcom/drcom.conf"
     )
 
     for file in paths:
         if exists(file):
-            code = compile('', file, 'exec')
+            script = open(file, "rt", encoding="utf-8").read()
+            #! 在 Windows 中文环境下, compile 直接读取文件会使用 gbk 编码
+            code = compile(script, "drcom.conf", 'exec')
+            print("使用配置文件 {path}".format(path=file))
             break
+        else:
+            print("未找到配置文件 {path}".format(path=file))
+    else:
+        raise FileNotFoundError("找不到配置文件")
 
-    
     exec(code, conf.__dict__)
-
     return conf
 
 def configure():
@@ -98,4 +106,8 @@ def configure():
             file.write("\n")
         exit(0)
     else:
-        return getConfigFileContent(arg.config_file)
+        conf = getConfigFileContent(arg.config_file)
+        return conf
+
+if __name__ == "__main__":
+    configure()
