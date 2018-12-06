@@ -5,3 +5,6 @@ def main():
     conf = configure()
     app = Drcom(conf)
     app.run()
+
+if __name__ == "__main__":
+    main()

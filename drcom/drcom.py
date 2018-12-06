@@ -82,7 +82,7 @@ class Drcom:
         self.LOG_FILE           = conf.LOG_FILE
         self.LOG_ALLWAYS_SAVE   = conf.LOG_ALLWAYS_SAVE
         self.CONTROLCHECKSTATUS = conf.CONTROLCHECKSTATUS
-        self.ADPAPTERNUM        = conf.ADAPTERNUM
+        self.ADAPTERNUM         = conf.ADAPTERNUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
         self.AUTH_VERSION       = conf.AUTH_VERSION
         self.IPDOG              = conf.IPDOG
@@ -95,6 +95,7 @@ class Drcom:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.bind_ip, self.port))
         self.socket.settimeout(3)
+        self.AUTH_INFO = None   # 将在 login 时被赋值, 在 logout 时使用
 
     def challenge(self, rand_num):
         while True:
@@ -158,7 +159,7 @@ class Drcom:
         data.append(md5sum(b'\x03\x01' + self.SALT + self.password.encode()))
         data.append((self.username.encode() + b'\x00'*36)[:36])
         data.append(self.CONTROLCHECKSTATUS)
-        data.append(self.ADPAPTERNUM)
+        data.append(self.ADAPTERNUM)
         data.append(
             dump(
                 int(
@@ -214,6 +215,34 @@ class Drcom:
 
         log('[mkpkt]', str(binascii.hexlify(data))[2:][:-1])
         return data
+
+    def keepAlive1(self, tail):
+        data = []
+        foo = struct.pack("!H", int(time.time()) % 0xffff)
+        data.append(
+            b'\xff' + md5sum(
+                b'\x03\x01' + self.SALT + self.password.encode()
+            ) + b'\x00\x00\x00'
+        )
+        data.append(tail)
+        data.append(foo + b'\x00\x00\x00\x00')
+        data = b''.join(data)
+        log(
+            '[keepAlive1] send', str(binascii.hexlify(data))[2:][:-1]
+        )
+
+        self.socket.sendto(data, (self.server, self.port))
+
+        while True:
+            data, address = self.socket.recvfrom(1024)
+            if data[:1] == b'\x07':
+                break
+            else:
+                log(
+                    '[keepAlive1] recv/unexpected',
+                    str((binascii.hexlify(data))[2:][:-1])
+                )
+        log('[keepAlive1] recv', str(binascii.hexlify(data))[2:][:-1])
 
     def keepAlive2(self, package_tail):
         tail = None
@@ -299,7 +328,7 @@ class Drcom:
 
         tail = data[16:20]
 
-        log("[keepAlive2] keep-alive2 loop was in daemon.")
+        log("[keepAlive2] keepAlive2 loop was in daemon.")
 
         svr_num_copy = svr_num
 
@@ -345,7 +374,7 @@ class Drcom:
 
                 svr_num_copy = (svr_num_copy + 2) % 127
             except KeyboardInterrupt:
-                raise KeyboardInterrupt()
+                self.logout()
             except:
                 pass
 
@@ -366,6 +395,7 @@ class Drcom:
             if address == (self.server, self.port):
                 if data[:1] == b'\x04':
                     log('[login] loged in')
+                    self.AUTH_INFO = data[23:39]
                     break
                 else:
                     log('[login] login failed.')
@@ -378,33 +408,27 @@ class Drcom:
         log('[login] login sent')
         return data[23:39]
 
-    def keepAlive1(self, tail):
+    def logout(self):
+        salt = self.challenge(time.time()+random.randint(0xF, 0xFF))
         data = []
-        foo = struct.pack("!H", int(time.time()) % 0xffff)
-        data.append(
-            b'\xff' + md5sum(
-                b'\x03\x01' + self.SALT + self.password.encode()
-            ) + b'\x00\x00\x00'
-        )
-        data.append(tail)
-        data.append(foo + b'\x00\x00\x00\x00')
-        data = b''.join(data)
-        log(
-            '[keepAlive1] send', str(binascii.hexlify(data))[2:][:-1]
-        )
-
-        self.socket.sendto(data, (self.server, self.port))
-
-        while True:
+        if salt:
+            data.append(b'\x06\x01\x00' + bytes([len(self.username) + 20]))
+            data.append(md5sum(b'\x03\x01' + salt + self.password.encode()))
+            data.append((self.username.encode() + 36*b'\x00')[:36])
+            data.append(self.CONTROLCHECKSTATUS)
+            data.append(self.ADAPTERNUM)
+            data.append(
+                dump(
+                    int(binascii.hexlify(b''.join(data[4:10])), 16)^self.mac
+                )[-6:]
+            )
+            data.append(self.AUTH_INFO)
+            data = b''.join(data)
+            self.socket.sendto(data, (self.server, self.port))
             data, address = self.socket.recvfrom(1024)
-            if data[:1] == b'\x07':
-                break
-            else:
-                log(
-                    '[keepAlive1] recv/unexpected',
-                    str((binascii.hexlify(data))[2:][:-1])
-                )
-        log('[keepAlive1] recv', str(binascii.hexlify(data))[2:][:-1])
+            if data[:1] == b'\x04':
+                log('[logout] logouted.')
+                exit(0)
 
     def emptySocketBuffer(self):
         log('starting to empty socket buffer')

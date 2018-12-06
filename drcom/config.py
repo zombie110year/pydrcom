@@ -108,6 +108,3 @@ def configure():
     else:
         conf = getConfigFileContent(arg.config_file)
         return conf
-
-if __name__ == "__main__":
-    configure()
