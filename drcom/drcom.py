@@ -11,29 +11,35 @@ import platform
 import random
 import binascii
 
+
 class ChallengeException(Exception):
     def __init__(self):
         pass
 
+
 class LoginException(Exception):
     def __init__(self):
         pass
+
 
 def log(*args, **kwargs):
     print(
         ' '.join(args)
     )
 
+
 def md5sum(x):
     m = md5()
     m.update(x)
     return m.digest()
 
+
 def dump(n):
-    s = '%x'%n
-    if len(s) & 1: #奇数
+    s = '%x' % n
+    if len(s) & 1:  # 奇数
         s = '0' + s
     return binascii.unhexlify(bytes(s, 'ascii'))
+
 
 def ror(md5sum, pwd):
     result = []
@@ -42,19 +48,22 @@ def ror(md5sum, pwd):
         result.append(struct.pack("B", ((x << 3) & 0xff) + (x >> 5)))
     return ''.join(result)
 
+
 def checksum(bytes_):
     resualt = 1234
     for i in [x*4 for x in range(0, -(-len(bytes_)//4))]:
         resualt ^= int(
             binascii.hexlify(bytes_[i:i+4].ljust(4, b'\x00')[::-1]), 16
         )
-    
+
     resualt = (1968 * resualt) & 0xffffffff
     return struct.pack('<I', resualt)
 
+
 def daemon():
-    with open('/var/run/pydrcom.pid', 'w') as file:
+    with open('/var/run/drcom.pid', 'w') as file:
         file.write(str(os.getpid()))
+
 
 class Drcom:
     """
@@ -67,27 +76,27 @@ class Drcom:
     """
 
     def readConf(self, conf):
-        self.username           = conf.username
-        self.password           = conf.password
-        self.server             = conf.server
-        self.dns                = conf.dns
-        self.dhcp_server        = conf.dhcp_server
-        self.host_name          = conf.host_name
-        self.host_os            = conf.host_os
-        self.host_ip            = conf.host_ip
-        self.mac                = conf.mac
-        self.bind_ip            = conf.bind_ip
-        self.port               = conf.port
-        self.nic_name           = conf.nic_name
-        self.LOG_FILE           = conf.LOG_FILE
-        self.LOG_ALLWAYS_SAVE   = conf.LOG_ALLWAYS_SAVE
+        self.username = conf.username
+        self.password = conf.password
+        self.server = conf.server
+        self.dns = conf.dns
+        self.dhcp_server = conf.dhcp_server
+        self.host_name = conf.host_name
+        self.host_os = conf.host_os
+        self.host_ip = conf.host_ip
+        self.mac = conf.mac
+        self.bind_ip = conf.bind_ip
+        self.port = conf.port
+        self.nic_name = conf.nic_name
+        self.LOG_FILE = conf.LOG_FILE
+        self.LOG_ALLWAYS_SAVE = conf.LOG_ALLWAYS_SAVE
         self.CONTROLCHECKSTATUS = conf.CONTROLCHECKSTATUS
-        self.ADAPTERNUM         = conf.ADAPTERNUM
+        self.ADAPTERNUM = conf.ADAPTERNUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
-        self.AUTH_VERSION       = conf.AUTH_VERSION
-        self.IPDOG              = conf.IPDOG
-        self.SALT               = conf.SALT
-        self.ror_version        = conf.ror_version
+        self.AUTH_VERSION = conf.AUTH_VERSION
+        self.IPDOG = conf.IPDOG
+        self.SALT = conf.SALT
+        self.ror_version = conf.ror_version
         del conf
 
     def __init__(self, conf):
@@ -130,7 +139,7 @@ class Drcom:
         data = []
 
         data.append(
-            b'\x07'+ bytes([num]) + b'\x28\x00\x0B' + bytes([type_])
+            b'\x07' + bytes([num]) + b'\x28\x00\x0B' + bytes([type_])
         )
         if first:
             data.append(b'\x0f\x27')
@@ -168,7 +177,8 @@ class Drcom:
                 ) ^ self.mac
             )[-6:]
         )
-        data.append(md5sum(b'\x01' + self.password.encode() + self.SALT + b'\x00'*4))
+        data.append(
+            md5sum(b'\x01' + self.password.encode() + self.SALT + b'\x00'*4))
         data.append(b'\x01')
         data.append(
             b''.join(
@@ -207,8 +217,9 @@ class Drcom:
             )
         data.append(b'\x02\x0c')
         data.append(
-            checksum(b''.join(data) + b'\x01\x26\x07\x11\x00\x00' + dump(self.mac))
-            )
+            checksum(b''.join(data) +
+                     b'\x01\x26\x07\x11\x00\x00' + dump(self.mac))
+        )
         data.append(b'\x00\x00\xe9\x13')
 
         data = b''.join(data)
@@ -248,7 +259,7 @@ class Drcom:
         tail = None
         package = None
         svr_num = 0
-        rand_num  = random.randint(0, 0xffff) + random.randint(1, 10)
+        rand_num = random.randint(0, 0xffff) + random.randint(1, 10)
         package = self.makeKeepAlivePackage(
             num=svr_num,
             tail=b'\x00'*4,
@@ -419,7 +430,7 @@ class Drcom:
             data.append(self.ADAPTERNUM)
             data.append(
                 dump(
-                    int(binascii.hexlify(b''.join(data[4:10])), 16)^self.mac
+                    int(binascii.hexlify(b''.join(data[4:10])), 16) ^ self.mac
                 )[-6:]
             )
             data.append(self.AUTH_INFO)
