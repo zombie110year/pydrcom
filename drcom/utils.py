@@ -1,13 +1,16 @@
-from hashlib import md5
-import struct
-import time
-import sys
+import binascii
 import os
 import platform
 import random
-import binascii
+import struct
+import sys
+import time
+from hashlib import md5
+
+
 class Namespace:
     pass
+
 
 class ChallengeException(Exception):
     def __init__(self):

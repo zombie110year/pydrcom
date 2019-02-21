@@ -40,6 +40,7 @@ drcom --generate-config
     - [x] Windows 10
 - [ ] 测试 Linux
     - [x] Ubuntu 16.04 LTS amd64
+    - [x] Deepin 15.9
 
 # 开源协议
 
