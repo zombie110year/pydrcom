@@ -1,3 +1,11 @@
+from hashlib import md5
+import struct
+import time
+import sys
+import os
+import platform
+import random
+import binascii
 class Namespace:
     pass
 

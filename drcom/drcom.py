@@ -4,7 +4,6 @@
 import socket
 import struct
 import time
-from hashlib import md5
 import sys
 import os
 import platform
