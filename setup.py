@@ -1,17 +1,19 @@
+#! /usr/bin/env python3
+# coding: utf-8
 from setuptools import setup, find_packages
 
-PROJECT_NAME = "PyDrcom"
-VERSION = "1.0.0"
+PROJECT_NAME = "pydrcom"
+VERSION = "1.0.1"
 DESCRIPTION = open("docs/description", "rt", encoding="utf-8").read()
 
 setup(
     name=PROJECT_NAME,
     version=VERSION,
     description=DESCRIPTION,
-    packages=find_packages(),
+    packages=['drcom'],
     entry_points={
         "console_scripts": [
-            "drcom = drcom.__main__:main"
+            "drcom = drcom.entry:main"
         ]
     },
 )

@@ -10,69 +10,16 @@ import os
 import platform
 import random
 import binascii
-
-
-class ChallengeException(Exception):
-    def __init__(self):
-        pass
-
-
-class LoginException(Exception):
-    def __init__(self):
-        pass
-
-
-def log(*args, **kwargs):
-    print(
-        ' '.join(args)
-    )
-
-
-def md5sum(x):
-    m = md5()
-    m.update(x)
-    return m.digest()
-
-
-def dump(n):
-    s = '%x' % n
-    if len(s) & 1:  # 奇数
-        s = '0' + s
-    return binascii.unhexlify(bytes(s, 'ascii'))
-
-
-def ror(md5sum, pwd):
-    result = []
-    for i in range(len(pwd)):
-        x = ord(md5sum[i]) ^ ord(pwd[i])
-        result.append(struct.pack("B", ((x << 3) & 0xff) + (x >> 5)))
-    return ''.join(result)
-
-
-def checksum(bytes_):
-    resualt = 1234
-    for i in [x*4 for x in range(0, -(-len(bytes_)//4))]:
-        resualt ^= int(
-            binascii.hexlify(bytes_[i:i+4].ljust(4, b'\x00')[::-1]), 16
-        )
-
-    resualt = (1968 * resualt) & 0xffffffff
-    return struct.pack('<I', resualt)
-
-
-def daemon():
-    with open('/var/run/drcom.pid', 'w') as file:
-        file.write(str(os.getpid()))
+from .utils import (ChallengeException,
+    LoginException, log, md5sum, dump, ror, checksum, daemon)
 
 
 class Drcom:
     """
     Drcom 客户端运行所需要的一切
 
-    Para
-    ----
-
-    - ``conf`` 处理后的配置项. 将从 conf 的属性读取配置, 例如 conf.username 等.
+    :param conf: 处理后的配置项. 将从 conf 的属性读取配置, 例如 conf.username 等.
+    :type conf: :class:`Namespace`
     """
 
     def readConf(self, conf):
@@ -88,23 +35,23 @@ class Drcom:
         self.bind_ip = conf.bind_ip
         self.port = conf.port
         self.nic_name = conf.nic_name
-        self.LOG_FILE = conf.LOG_FILE
-        self.LOG_ALLWAYS_SAVE = conf.LOG_ALLWAYS_SAVE
-        self.CONTROLCHECKSTATUS = conf.CONTROLCHECKSTATUS
-        self.ADAPTERNUM = conf.ADAPTERNUM
+        #self.LOG_FILE = conf.LOG_FILE
+        #self.LOG_ALLWAYS_SAVE = conf.LOG_ALLWAYS_SAVE
+        self.CONTROL_CHECK_STATUS = conf.CONTROL_CHECK_STATUS
+        self.ADAPTER_NUM = conf.ADAPTER_NUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
         self.AUTH_VERSION = conf.AUTH_VERSION
         self.IPDOG = conf.IPDOG
         self.SALT = conf.SALT
         self.ror_version = conf.ror_version
-        del conf
 
     def __init__(self, conf):
         self.readConf(conf)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.bind_ip, self.port))
         self.socket.settimeout(3)
-        self.AUTH_INFO = None   # 将在 login 时被赋值, 在 logout 时使用
+        # 将在 login 时被赋值, 在 logout 时使用
+        self.AUTH_INFO = None   
 
     def challenge(self, rand_num):
         while True:
@@ -167,8 +114,8 @@ class Drcom:
         data.append(b'\x03\x01\x00' + bytes([len(self.username) + 20]))
         data.append(md5sum(b'\x03\x01' + self.SALT + self.password.encode()))
         data.append((self.username.encode() + b'\x00'*36)[:36])
-        data.append(self.CONTROLCHECKSTATUS)
-        data.append(self.ADAPTERNUM)
+        data.append(self.CONTROL_CHECK_STATUS)
+        data.append(self.ADAPTER_NUM)
         data.append(
             dump(
                 int(
@@ -426,8 +373,8 @@ class Drcom:
             data.append(b'\x06\x01\x00' + bytes([len(self.username) + 20]))
             data.append(md5sum(b'\x03\x01' + salt + self.password.encode()))
             data.append((self.username.encode() + 36*b'\x00')[:36])
-            data.append(self.CONTROLCHECKSTATUS)
-            data.append(self.ADAPTERNUM)
+            data.append(self.CONTROL_CHECK_STATUS)
+            data.append(self.ADAPTER_NUM)
             data.append(
                 dump(
                     int(binascii.hexlify(b''.join(data[4:10])), 16) ^ self.mac

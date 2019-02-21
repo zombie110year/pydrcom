@@ -1,51 +1,40 @@
 from argparse import ArgumentParser
-from os.path import exists
+from pathlib import Path
 from os import environ
+from pkgutil import get_data
+from .utils import Namespace
+from platform import system
+from sys import exit
 
-config_template = r"""
-# 登陆校园网的账号密码
-username = "example"
-password = "passwd"
+from argparse import Action
 
-# 系统设置
-##! Drcom 认证服务器的 IP 地址
-server = "10.254.7.4"
+DEFAULT_CONFIG_FILES = [
+    Path("./drcom.conf"),
+    Path(
+        "{}/.config/drcom/drcom.conf".format(environ["HOME"])
+    ),
+    Path("/etc/drcom/drcom.conf"),
+]
+if system() == "Windows":
+    DEFAULT_CONFIG_FILES[1] = Path(
+        "{}/.config/drcom/drcom.conf".format(environ["USERPROFILE"])
+    )
 
-dns = "8.8.8.8"
-dhcp_server = "0.0.0.0"
+class SetFilesPathAction(Action):
+    """设置 dest 为 Path 对象
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        path = (Path(values).absolute(), ) # 需要一个元组
+        setattr(namespace, self.dest, path)
 
-## 计算机名, 没有严格要求, 被用于心跳包加密
-host_name = "faqdrcom"
-
-## 操作系统名, 没有严格要求, 被用于心跳包加密
-host_os = "Windows"
-
-##! 本机 IP 地址, 需要为本机设置静态 IP. 除了 Socket 通讯, 也被用于心跳包加密
-host_ip = "10.253.194.204"
-
-## 网卡 mac 地址, 为任意十六进制数, 除此之外没有严格要求, 用于心跳包加密
-mac = 0x1
-
-bind_ip = "0.0.0.0"
-
-## 绑定端口, 如果发生端口已被占用的情况就换一个
-port = 61440
-
-## 网卡名称, 非 Linux 无用. 可以不进行设置.
-nic_name = ""
-
-#! 客户端伪装参数 各学校可能不同
-CONTROL_CHECK_STATUS = b'\x20'
-ADAPTER_NUM = b'\x07'
-KEEP_ALIVE_VERSION = b'\xdc\x02'
-AUTH_VERSION = b'\x0a\x00'
-IPDOG = b'\x01'
-SALT = ""
-ror_version = False
-"""
-
-class Config:
-    __doc__ = config_template
+class GenerateFileAction(Action):
+    """生成文件后退出
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        file = get_data(__package__, "drcom.conf.temp").decode("utf-8")
+        with open("./drcom.conf", "wt", encoding="utf-8") as target:
+            target.write(file)
+        exit(0)
 
 def getCliArgs():
     parser = ArgumentParser(
@@ -54,57 +43,51 @@ def getCliArgs():
     )
     parser.add_argument(
         "-c", "--config",
-        dest="config_file",
-        help="指定配置文件 优先级 当前目录 > ~/.config/drcom/ > /etc/drcom 中的 drcom.conf",
+        dest="config",
+        help="指定配置文件 优先级 ./drcom.conf > ~/.config/drcom/drcom.conf > /etc/drcom/drcon.conf",
         required=False,
         metavar="path/to/drcom.conf",
-        default=""
+        default=DEFAULT_CONFIG_FILES,
+        action=SetFilesPathAction,
     )
     parser.add_argument(
         "--generate-config",
-        dest="gen_config_file",
         help="在当前目录下生成配置文件模板",
         required=False,
-        action="store_true",
+        action=GenerateFileAction,
         default=False
     )
     arg = parser.parse_args()
     return arg
 
-def getConfigFileContent(path):
-    conf = Config()
-    paths = (
-        path,
-        "./drcom.conf",
-        "~/.config/drcom/drcom.conf",
-        "{APPDATA}\\drcom\\drcom.conf".format(APPDATA=environ.get('APPDATA')), # Windows 系统下调用 cmd 查找路径不能识别 ~ 符号
-        "/etc/drcom/drcom.conf"
-    )
+def getConfigFileContent(paths):
+    conf = Namespace()
 
     for file in paths:
-        if exists(file):
-            script = open(file, "rt", encoding="utf-8").read()
-            #! 在 Windows 中文环境下, compile 直接读取文件会使用 gbk 编码
-            code = compile(script, "drcom.conf", 'exec')
-            print("使用配置文件 {path}".format(path=file))
+        if file.exists():
+            script = file.open("rt", encoding="utf-8").read()
+            print(
+                "使用配置文件 {path}".format(
+                    path=str(file.absolute())
+                )
+            )
+
             break
         else:
-            print("未找到配置文件 {path}".format(path=file))
+            print(
+                "未找到配置文件 {path}".format(
+                    path=str(file.absolute())
+                )
+            )
     else:
         raise FileNotFoundError("找不到配置文件")
 
-    exec(code, conf.__dict__)
+    exec(script, {}, conf.__dict__)
     return conf
 
 def configure():
 
     arg = getCliArgs()
+    conf = getConfigFileContent(arg.config)
+    return conf
 
-    if arg.gen_config_file:
-        with open("./drcom.conf", "wt", encoding="utf-8") as file:
-            file.write(config_template)
-            file.write("\n")
-        exit(0)
-    else:
-        conf = getConfigFileContent(arg.config_file)
-        return conf
