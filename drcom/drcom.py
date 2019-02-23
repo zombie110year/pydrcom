@@ -23,7 +23,7 @@ class Drcom:
     :type conf: :class:`Namespace`
     """
 
-    def readConf(self, conf):
+    def setConf(self, conf):
 
         self.SYSTEM = conf.SYSTEM
         self.username = conf.username
@@ -53,13 +53,22 @@ class Drcom:
             if re.match(r"(\d{1,3}\.){3}(\d{1,3})", ip):
                 self.host_ip = ip
 
-    def __init__(self, conf):
-        self.readConf(conf)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind((self.bind_ip, self.port))
+        for i in range(60000, 65535):
+            try:
+                self.bind_port = i
+                self.socket.bind((self.bind_ip, self.bind_port))
+                break
+            except OSError: # errno 98 address already in use
+                continue
+
         self.socket.settimeout(3)
         # 将在 login 时被赋值, 在 logout 时使用
         self.AUTH_INFO = None
+
+
+    def __init__(self, conf):
+        self.setConf(conf)
 
     def challenge(self, rand_num):
         while True:
