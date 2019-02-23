@@ -5,13 +5,14 @@ import binascii
 import os
 import platform
 import random
+import re
 import socket
 import struct
 import sys
 import time
 
 from .utils import (ChallengeException, LoginException, checksum, daemon, dump,
-                    log, md5sum, ror)
+                    log, md5sum, ror, getIP)
 
 
 class Drcom:
@@ -23,6 +24,8 @@ class Drcom:
     """
 
     def readConf(self, conf):
+
+        self.SYSTEM = conf.SYSTEM
         self.username = conf.username
         self.password = conf.password
         self.server = conf.server
@@ -44,6 +47,11 @@ class Drcom:
         self.IPDOG = conf.IPDOG
         self.SALT = conf.SALT
         self.ror_version = conf.ror_version
+
+        if self.SYSTEM == "Linux":
+            ip = getIP(self.nic_name)
+            if re.match(r"(\d{1,3}\.){3}(\d{1,3})", ip):
+                self.host_ip = ip
 
     def __init__(self, conf):
         self.readConf(conf)

@@ -74,10 +74,11 @@ def getIP(ifname):
     """
     import socket
     import fcntl
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(
         fcntl.ioctl(
-            socket.socket().fileno(),
+            s.fileno(),
             0x8915,
-            struct.pack('256s', ifname[:15].encode("utf-8"))
+            struct.pack('40s', ifname[:15].encode("utf-8"))
         )[20:24]
     )
