@@ -5,13 +5,14 @@ import binascii
 import os
 import platform
 import random
+import re
 import socket
 import struct
 import sys
 import time
 
 from .utils import (ChallengeException, LoginException, checksum, daemon, dump,
-                    log, md5sum, ror)
+                    log, md5sum, ror, getIP)
 
 
 class Drcom:
@@ -22,7 +23,9 @@ class Drcom:
     :type conf: :class:`Namespace`
     """
 
-    def readConf(self, conf):
+    def setConf(self, conf):
+
+        self.SYSTEM = conf.SYSTEM
         self.username = conf.username
         self.password = conf.password
         self.server = conf.server
@@ -45,13 +48,27 @@ class Drcom:
         self.SALT = conf.SALT
         self.ror_version = conf.ror_version
 
-    def __init__(self, conf):
-        self.readConf(conf)
+        if self.SYSTEM == "Linux":
+            ip = getIP(self.nic_name)
+            if re.match(r"(\d{1,3}\.){3}(\d{1,3})", ip):
+                self.host_ip = ip
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind((self.bind_ip, self.port))
+        for i in range(60000, 65535):
+            try:
+                self.bind_port = i
+                self.socket.bind((self.bind_ip, self.bind_port))
+                break
+            except OSError: # errno 98 address already in use
+                continue
+
         self.socket.settimeout(3)
         # 将在 login 时被赋值, 在 logout 时使用
         self.AUTH_INFO = None
+
+
+    def __init__(self, conf):
+        self.setConf(conf)
 
     def challenge(self, rand_num):
         while True:

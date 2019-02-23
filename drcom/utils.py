@@ -63,3 +63,22 @@ def checksum(bytes_):
 def daemon():
     with open('/var/run/drcom.pid', 'w') as file:
         file.write(str(os.getpid()))
+
+def getIP(ifname):
+    """获取目标网卡所占的 IP 地址
+    Linux 下可用.
+
+    原理可以看 https://bitmingw.com/2018/05/06/get-ip-address-of-network-interface-in-python/
+
+    :param str ifname: 目标网卡的命名, 可以使用 ifconfig 查看, 例如 ``eth0``.
+    """
+    import socket
+    import fcntl
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(
+        fcntl.ioctl(
+            s.fileno(),
+            0x8915,
+            struct.pack('40s', ifname[:15].encode("utf-8"))
+        )[20:24]
+    )

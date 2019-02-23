@@ -1,5 +1,11 @@
-from .config import configure
+from .config import configure, getConfigFileContent
 from .drcom import Drcom
+
+
+def _main(conf_path):
+    conf = getConfigFileContent(conf_path)
+    app = Drcom(conf)
+    return app
 
 
 def main():
