@@ -19,16 +19,20 @@ if system() == "Windows":
         "{}/.config/drcom/drcom.conf".format(environ["USERPROFILE"])
     )
 
+
 class SetFilesPathAction(Action):
     """设置 dest 为 Path 对象
     """
+
     def __call__(self, parser, namespace, values, option_string=None):
-        path = (Path(values).absolute(), ) # 需要一个元组
+        path = (Path(values).absolute(), )  # 需要一个元组
         setattr(namespace, self.dest, path)
+
 
 class GenerateFileAction(Action):
     """生成文件后退出
     """
+
     def __init__(self,
                  option_strings,
                  dest=SUPPRESS,
@@ -40,11 +44,17 @@ class GenerateFileAction(Action):
             default=default,
             nargs=0,
             help=help)
+
     def __call__(self, parser, namespace, values, option_string=None):
-        file = get_data(__package__, "drcom.conf.temp").decode("utf-8")
-        with open("./drcom.conf", "wt", encoding="utf-8") as target:
+        file = get_data(__package__, "drcom.conf").decode("utf-8")
+        target_file = Path("./drcom.conf")
+        with target_file.open("wt", encoding="utf-8") as target:
             target.write(file)
+        print(
+            "配置文件生成于 {}".format(target.absolute())
+        )
         exit(0)
+
 
 def getCliArgs():
     parser = ArgumentParser(
@@ -68,6 +78,7 @@ def getCliArgs():
     )
     arg = parser.parse_args()
     return arg
+
 
 def getConfigFileContent(paths):
     conf = Namespace()
@@ -93,6 +104,7 @@ def getConfigFileContent(paths):
 
     exec(script, {}, conf.__dict__)
     return conf
+
 
 def configure():
 

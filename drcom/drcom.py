@@ -1,16 +1,17 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import socket
-import struct
-import time
-import sys
+import binascii
 import os
 import platform
 import random
-import binascii
-from .utils import (ChallengeException,
-    LoginException, log, md5sum, dump, ror, checksum, daemon)
+import socket
+import struct
+import sys
+import time
+
+from .utils import (ChallengeException, LoginException, checksum, daemon, dump,
+                    log, md5sum, ror)
 
 
 class Drcom:
@@ -50,7 +51,7 @@ class Drcom:
         self.socket.bind((self.bind_ip, self.port))
         self.socket.settimeout(3)
         # 将在 login 时被赋值, 在 logout 时使用
-        self.AUTH_INFO = None   
+        self.AUTH_INFO = None
 
     def challenge(self, rand_num):
         while True:
