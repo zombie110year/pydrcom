@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import binascii
-import os
+import logging
 import platform
 import random
 import re
@@ -11,8 +11,8 @@ import struct
 import sys
 import time
 
-from .utils import (ChallengeException, LoginException, checksum, daemon, dump,
-                    log, md5sum, ror, getIP)
+from .utils import (ChallengeException, LoginException, RuntimeCounter,
+                    checksum, daemon, dump, getIP, md5sum, ror)
 
 
 class Drcom:
@@ -38,8 +38,8 @@ class Drcom:
         self.bind_ip = conf.bind_ip
         self.port = conf.port
         self.nic_name = conf.nic_name
-        #self.LOG_FILE = conf.LOG_FILE
-        #self.LOG_ALLWAYS_SAVE = conf.LOG_ALLWAYS_SAVE
+        self.LOG_FILE = conf.LOG_FILE
+        self.LOG_LEVEL = conf.LOG_LEVEL
         self.CONTROL_CHECK_STATUS = conf.CONTROL_CHECK_STATUS
         self.ADAPTER_NUM = conf.ADAPTER_NUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
@@ -62,6 +62,13 @@ class Drcom:
             except OSError: # errno 98 address already in use
                 continue
 
+        logging.basicConfig(
+            level=getattr(logging, self.LOG_LEVEL, logging.DEBUG),
+            stream=sys.stderr,
+            format="{levelname}: {message}",
+            style="{",
+        )
+
         self.socket.settimeout(3)
         # 将在 login 时被赋值, 在 logout 时使用
         self.AUTH_INFO = None
@@ -69,6 +76,7 @@ class Drcom:
 
     def __init__(self, conf):
         self.setConf(conf)
+        self.counter = RuntimeCounter()
 
     def challenge(self, rand_num):
         while True:
@@ -79,23 +87,24 @@ class Drcom:
             )
             try:
                 data, address = self.socket.recvfrom(1024)
-                log(
-                    '[challenge] recv',
-                    str(binascii.hexlify(data))[2:][:-1]
-                )
+                logging.info('[challenge] recv')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
+                self.counter.clear()
             except socket.timeout:
-                log('[challenge] timeout, retrying...')
+                logging.warning('[challenge] timeout, retrying...')
+                self.counter()
                 continue
 
             if address == (self.server, self.port):
                 break
 
-            log('[DEBUG] challenge:\n' + str(binascii.hexlify(data))[2:][:-1])
+            logging.info('[DEBUG] challenge')
+            logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
             if data[:1] != b'\x02':     # 对字节不要 data[0]
                 raise ChallengeException()
 
-            log('[challenge] challenge packet sent.')
+            logging.info('[challenge] challenge packet sent.')
 
         return data[4:8]
 
@@ -188,7 +197,8 @@ class Drcom:
 
         data = b''.join(data)
 
-        log('[mkpkt]', str(binascii.hexlify(data))[2:][:-1])
+        logging.info('[mkpkt]')
+        logging.debug(str(binascii.hexlify(data))[2:][:-1])
         return data
 
     def keepAlive1(self, tail):
@@ -202,9 +212,8 @@ class Drcom:
         data.append(tail)
         data.append(foo + b'\x00\x00\x00\x00')
         data = b''.join(data)
-        log(
-            '[keepAlive1] send', str(binascii.hexlify(data))[2:][:-1]
-        )
+        logging.info('[keepAlive1] send')
+        logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
         self.socket.sendto(data, (self.server, self.port))
 
@@ -213,11 +222,11 @@ class Drcom:
             if data[:1] == b'\x07':
                 break
             else:
-                log(
-                    '[keepAlive1] recv/unexpected',
-                    str((binascii.hexlify(data))[2:][:-1])
-                )
-        log('[keepAlive1] recv', str(binascii.hexlify(data))[2:][:-1])
+                logging.info('[keepAlive1] recv/unexpected')
+                logging.debug(str((binascii.hexlify(data))[2:][:-1]))
+
+        logging.info('[keepAlive1] recv')
+        logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
     def keepAlive2(self, package_tail):
         tail = None
@@ -233,10 +242,12 @@ class Drcom:
 
         while True:
             self.socket.sendto(package, (self.server, self.port))
-            log('[keepAlive2] send1', str(binascii.hexlify(package))[2:][:-1])
+            logging.info('[keepAlive2] send1')
+            logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
             data, address = self.socket.recvfrom(1024)
-            log('[keepAlive2] recv1', str(binascii.hexlify(data))[2:][:-1])
+            logging.info('[keepAlive2] recv1')
+            logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
             if (
                 data.startswith(b'\x07\x00\x28\x00') or
@@ -244,14 +255,12 @@ class Drcom:
             ):
                 break
             elif data[:1] == b'\x07' and data[2:3] == b'\x10':
-                log('[keepAlive2] recv file, resending..')
+                logging.info('[keepAlive2] recv file, resending..')
                 svr_num += 1
                 break
             else:
-                log(
-                    "[keepAlive2] recv1/unexpected",
-                    str(binascii.hexlify(data))[2:][:-1]
-                )
+                logging.info("[keepAlive2] recv1/unexpected")
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
         rand_num += random.randint(1, 10)
         package = self.makeKeepAlivePackage(
@@ -260,20 +269,22 @@ class Drcom:
             type_=1
         )
         self.socket.sendto(package, (self.server, self.port))
-        log('[keepAlive2] send2', str(binascii.hexlify(package))[2:][:-1])
+        logging.info('[keepAlive2] send2')
+        logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
         while True:
             data, address = self.socket.recvfrom(1024)
             if data[:1] == b'\x07':
                 svr_num += 1
+                self.counter.clear()
                 break
             else:
-                log(
-                    '[keepAlive2] recv2/unexpected',
-                    str(binascii.hexlify(data))[2:][:-1]
-                )
+                self.counter()
+                logging.info('[keepAlive2] recv2/unexpected')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
-        log('[keepAlive2] recv2', str(binascii.hexlify(data))[2:][:-1])
+        logging.info('[keepAlive2] recv2')
+        logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
         tail = data[16:20]
 
@@ -292,18 +303,19 @@ class Drcom:
 
             if data[:1] == b'\x07':
                 svr_num += 1
+                self.counter.clear()
                 break
             else:
-                log(
-                    '[keepAlive2] recv3/unexpected',
-                    str(binascii.hexlify(data))[2:][:-1]
-                )
+                logging.info('[keepAlive2] recv3/unexpected')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
+                self.counter()
 
-        log('[keepAlive2] recv3', str(binascii.hexlify(data))[2:][:-1])
+        logging.info('[keepAlive2] recv3')
+        logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
         tail = data[16:20]
 
-        log("[keepAlive2] keepAlive2 loop was in daemon.")
+        logging.info("[keepAlive2] keepAlive2 loop was in daemon.")
 
         svr_num_copy = svr_num
 
@@ -319,14 +331,13 @@ class Drcom:
                 )
 
                 self.socket.sendto(package, (self.server, self.port))
-                log(
-                    '[keepAlive2] send',
-                    str(svr_num_copy),
-                    str(binascii.hexlify(package))[2:][:-1]
-                )
+                logging.info('[keepAlive2] send')
+                logging.debug(str(svr_num_copy))
+                logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
                 data, address = self.socket.recvfrom(1024)
-                log('[keepAlive2] recv', str(binascii.hexlify(data))[2:][:-1])
+                logging.info('[keepAlive2] recv')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
                 rand_num += random.randint(1, 10)
 
@@ -337,21 +348,21 @@ class Drcom:
                 )
 
                 self.socket.sendto(package, (self.server, self.port))
-                log(
-                    '[keepAlive2] send',
-                    str(svr_num_copy+1),
-                    str(binascii.hexlify(package))[2:][:-1]
-                )
+                logging.info('[keepAlive2] send')
+                logging.debug(str(svr_num_copy+1))
+                logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
                 data, address = self.socket.recvfrom(1024)
-                log('[keepAlive2] recv', str(binascii.hexlify(data))[2:][:-1])
+                logging.info('[keepAlive2] recv')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
 
                 svr_num_copy = (svr_num_copy + 2) % 127
+                self.counter.clear()
             except KeyboardInterrupt:
                 self.logout()
             except:
-                pass
+                self.counter()
 
     def login(self):
         i = 0
@@ -361,26 +372,28 @@ class Drcom:
             packet = self.mkpkt()
 
             self.socket.sendto(packet, (self.server, self.port))
-            log('[login] send', str(binascii.hexlify(packet))[2:][:-1])
+            logging.info('[login] send')
+            logging.debug(str(binascii.hexlify(packet))[2:][:-1])
 
             data, address = self.socket.recvfrom(1024)
-            log('[login] recv', str(binascii.hexlify(data))[2:][:-1])
-            log('[login] packet sent.')
+            logging.info('[login] recv')
+            logging.debug(str(binascii.hexlify(data))[2:][:-1])
+            logging.info('[login] packet sent.')
 
             if address == (self.server, self.port):
                 if data[:1] == b'\x04':
-                    log('[login] loged in')
+                    logging.info('[login] loged in')
                     self.AUTH_INFO = data[23:39]
                     break
                 else:
-                    log('[login] login failed.')
+                    logging.warning('[login] login failed.')
                     time.sleep(30)
                     continue
             else:
                 if i >= 5:
-                    log('[login] exception occured.')
+                    logging.error('[login] exception occured.')
                     sys.exit(1)
-        log('[login] login sent')
+        logging.info('[login] login sent')
         return data[23:39]
 
     def logout(self):
@@ -402,44 +415,42 @@ class Drcom:
             self.socket.sendto(data, (self.server, self.port))
             data, address = self.socket.recvfrom(1024)
             if data[:1] == b'\x04':
-                log('[logout] logouted.')
+                logging.info('[logout] logouted.')
                 exit(0)
 
     def emptySocketBuffer(self):
-        log('starting to empty socket buffer')
+        logging.info('starting to empty socket buffer')
         try:
             while True:
                 data, address = self.socket.recvfrom(1024)
-                log(
-                    'recived sth unexpected',
-                    str(binascii.hexlify(data))[2:][:-1]
-                )
+                logging.info('recived sth unexpected')
+                logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 if self.socket == '':
                     break
         except KeyboardInterrupt:
             raise KeyboardInterrupt()
         except:
-            log('exception in emptySocketBuffer')
-        log('Emptied')
+            logging.exception('exception in emptySocketBuffer')
+        logging.info('Emptied')
 
     def run(self):
         if platform.platform() == "Linux":
             daemon()
-        log(
+        logging.info(
             """
-            auth svr: {server}
-            username: {username}
-            password: {password}
-            mac:      0x{mac:x}
-            bind_ip:  {ip}
-            port:     {port}
+            auth svr:  {server}
+            username:  {username}
+            password:  {password}
+            mac:       0x{mac:x}
+            bind_ip:   {ip}
+            bind_port: {bind_port}
             """.format(
                 server=self.server,
                 username=self.username,
                 password='*'*len(self.password),
                 mac=self.mac,
                 ip=self.bind_ip,
-                port=self.port
+                bind_port=self.bind_port,
             )
         )
         while True:
@@ -448,10 +459,8 @@ class Drcom:
             except LoginException:
                 time.sleep(3)
                 continue
-            log(
-                'package_tail',
-                str(binascii.hexlify(package_tail))[2:][:-1]
-            )
+            logging.debug('package_tail')
+            logging.debug(str(binascii.hexlify(package_tail))[2:][:-1])
             self.emptySocketBuffer()
             self.keepAlive1(package_tail)
             self.keepAlive2(package_tail)

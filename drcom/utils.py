@@ -1,7 +1,5 @@
 import binascii
 import os
-import platform
-import random
 import struct
 import sys
 import time
@@ -22,10 +20,27 @@ class LoginException(Exception):
         pass
 
 
-def log(*args, **kwargs):
-    print(
-        ' '.join(args)
-    )
+class RuntimeCounter:
+    """记录运行次数, 若达到限制则终止
+
+    :param int max: 最大运行次数
+
+    .. method:: clear()
+
+        清空计数器
+    """
+
+    def __init__(self, max=5):
+        self.__max = max
+        self.__counter = 0
+
+    def __call__(self):
+        self.__counter += 1
+        if self.__counter >= self.__max:
+            sys.exit(-1)
+
+    def clear(self):
+        self.__counter = 0
 
 
 def md5sum(x):
@@ -63,6 +78,7 @@ def checksum(bytes_):
 def daemon():
     with open('/var/run/drcom.pid', 'w') as file:
         file.write(str(os.getpid()))
+
 
 def getIP(ifname):
     """获取目标网卡所占的 IP 地址
