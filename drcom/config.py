@@ -94,8 +94,8 @@ def getConfigFileContent(paths):
         if not isinstance(path, Path):
             path = Path(path)
 
+        file = path
         if path.exists():
-            file = path
             script = file.open("rt", encoding="utf-8").read()
             print(
                 "使用配置文件 {path}".format(

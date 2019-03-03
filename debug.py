@@ -3,5 +3,6 @@
 
 from drcom.entry import main, _main
 
-app = _main(("debug/drcom.conf",))
-app.run()
+#app = _main(("debug/drcom.conf",))
+#app.run()
+main()
