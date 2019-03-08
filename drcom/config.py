@@ -7,17 +7,22 @@ from sys import exit
 
 from .utils import Namespace
 
-DEFAULT_CONFIG_FILES = [
-    Path("./drcom.conf"),
-    Path(
-        "{}/.config/drcom/drcom.conf".format(environ["HOME"])
-    ),
-    Path("/etc/drcom/drcom.conf"),
-]
 if system() == "Windows":
-    DEFAULT_CONFIG_FILES[1] = Path(
-        "{}/.config/drcom/drcom.conf".format(environ["USERPROFILE"])
-    )
+    DEFAULT_CONFIG_FILES = [
+        Path("./drcom.conf"),
+        Path(
+            "{}/.config/drcom/drcom.conf".format(environ["USERPROFILE"])
+        ),
+        Path("/etc/drcom/drcom.conf"),
+    ]
+else:
+    DEFAULT_CONFIG_FILES = [
+        Path("./drcom.conf"),
+        Path(
+            "{}/.config/drcom/drcom.conf".format(environ["HOME"])
+        ),
+        Path("/etc/drcom/drcom.conf"),
+    ]
 
 
 class SetFilesPathAction(Action):
@@ -51,9 +56,9 @@ class GenerateFileAction(Action):
         with target_file.open("wt", encoding="utf-8") as target:
             target.write(file)
         print(
-            "配置文件生成于 {}".format(target.absolute())
+            "配置文件生成于 {}".format(target_file.absolute())
         )
-        exit(0)
+        parser.exit()
 
 
 def getCliArgs():
@@ -73,8 +78,7 @@ def getCliArgs():
     parser.add_argument(
         "--generate-config",
         help="在当前目录下生成配置文件模板",
-        action=GenerateFileAction,
-        default=False
+        action=GenerateFileAction
     )
     arg = parser.parse_args()
     return arg
