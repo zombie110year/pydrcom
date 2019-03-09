@@ -80,6 +80,12 @@ def getCliArgs():
         help="在当前目录下生成配置文件模板",
         action=GenerateFileAction
     )
+    parser.add_argument(
+        "--log",
+        help="设定日志级别",
+        choices=["ERROR", "INFO", "DEBUG"],
+        default="INFO"
+    )
     arg = parser.parse_args()
     return arg
 
@@ -123,4 +129,5 @@ def configure():
 
     arg = getCliArgs()
     conf = getConfigFileContent(arg.config)
+    conf.LOG_LEVEL = arg.log
     return conf

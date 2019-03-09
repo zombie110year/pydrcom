@@ -38,10 +38,8 @@ class Drcom:
         self.bind_ip = conf.bind_ip
         self.port = conf.port
         self.nic_name = conf.nic_name
-        # self.LOG_FILE = conf.LOG_FILE
-        # self.LOG_LEVEL = conf.LOG_LEVEL
         self.LOG_FILE = None
-        self.LOG_LEVEL = "DEBUG"
+        self.LOG_LEVEL = conf.LOG_LEVEL
         self.CONTROL_CHECK_STATUS = conf.CONTROL_CHECK_STATUS
         self.ADAPTER_NUM = conf.ADAPTER_NUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
