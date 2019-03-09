@@ -79,7 +79,6 @@ def daemon():
     with open('/var/run/drcom.pid', 'w') as file:
         file.write(str(os.getpid()))
 
-
 def getIP(ifname):
     """获取目标网卡所占的 IP 地址
     Linux 下可用.
