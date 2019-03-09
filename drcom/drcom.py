@@ -109,109 +109,96 @@ class Drcom:
         return data[4:8]
 
     def makeKeepAlivePackage(self, num, tail, type_=1, first=False):
-        data = []
+        data = b''
 
-        data.append(
-            b'\x07' + bytes([num]) + b'\x28\x00\x0B' + bytes([type_])
-        )
+        data += b'\x07' + bytes([num]) + b'\x28\x00\x0B' + bytes([type_])
+
         if first:
-            data.append(b'\x0f\x27')
+            data += b'\x0f\x27'
         else:
-            data.append(self.KEEP_ALIVE_VERSION)
-        data.append(b'\x2F\x12' + b'\x00'*6)
-        data.append(tail)
-        data.append(b'\x00'*4)
+            data += self.KEEP_ALIVE_VERSION
+        data += b'\x2F\x12' + b'\x00'*6
+        data += tail
+        data += b'\x00'*4
 
         if type_ == 3:
             foo = b''.join(
                 [bytes([int(i)]) for i in self.host_ip.split('.')]
             )
             crc = b'\x00'*4
-            data.append(crc + foo + b'\x00'*8)
+            data += crc + foo + b'\x00'*8
         else:
-            data.append(b'\x00'*16)
+            data += b'\x00'*16
 
-        return b''.join(data)
+        return data
 
     def mkpkt(self):
 
-        data = []
+        data = b''
 
-        data.append(b'\x03\x01\x00' + bytes([len(self.username) + 20]))
-        data.append(md5sum(b'\x03\x01' + self.SALT + self.password.encode()))
-        data.append((self.username.encode() + b'\x00'*36)[:36])
-        data.append(self.CONTROL_CHECK_STATUS)
-        data.append(self.ADAPTER_NUM)
-        data.append(
-            dump(
-                int(
-                    binascii.hexlify(b''.join(data)[4:10]),
-                    base=16
-                ) ^ self.mac
-            )[-6:]
-        )
-        data.append(
-            md5sum(b'\x01' + self.password.encode() + self.SALT + b'\x00'*4))
-        data.append(b'\x01')
-        data.append(
-            b''.join(
-                [bytes([int(i)]) for i in self.host_ip.split('.')]
-            )
-        )
-        data.append(b'\x00'*12)
-        data.append(md5sum(b''.join(data) + b'\x14\x00\x07\x0B')[:8])
-        data.append(self.IPDOG)
-        data.append(b'\x00'*4)
-        data.append((self.host_name.encode() + b'\x00'*32)[:32])
-        data.append(
-            b''.join(
-                [bytes([int(i)]) for i in self.dns.split('.')]
-            )
-        )
-        data.append(
-            b''.join(
-                [bytes([int(i)]) for i in self.dhcp_server.split('.')]
-            )
-        )
-        data.append(b'\x00'*12)
-        data.append(b'\x94\x00\x00\x00')
-        data.append(b'\x05\x00\x00\x00')
-        data.append(b'\x01\x00\x00\x00')
-        data.append(b'\x28\x0A\x00\x00')
-        data.append(b'\x02\x00\x00\x00')
-        data.append((self.host_os.encode() + 32*b'\x00')[:32])
-        data.append(b'\x00'*96)
-        data.append(self.AUTH_VERSION)
+        data += b'\x03\x01\x00' + bytes([len(self.username) + 20])
+        data += md5sum(b'\x03\x01' + self.SALT + self.password.encode())
+        data += (self.username.encode() + b'\x00'*36)[:36]
+        data += self.CONTROL_CHECK_STATUS
+        data += self.ADAPTER_NUM
+        data += dump(
+                    int(
+                        binascii.hexlify(data[4:10]),
+                        base=16
+                    ) ^ self.mac
+                )[-6:]
+        data += md5sum(b'\x01' + self.password.encode() + self.SALT + b'\x00'*4)
+        data += b'\x01'
+        data += b''.join(
+                    [bytes([int(i)]) for i in self.host_ip.split('.')]
+                )
+        data += b'\x00'*12
+        data += md5sum(data + b'\x14\x00\x07\x0B')[:8]
+        data += self.IPDOG
+        data += b'\x00'*4
+        data += (self.host_name.encode() + b'\x00'*32)[:32]
+        data += b''.join(
+                    [bytes([int(i)]) for i in self.dns.split('.')]
+                )
+
+        data += b''.join(
+                    [bytes([int(i)]) for i in self.dhcp_server.split('.')]
+                )
+        data += b'\x00'*12
+        data += b'\x94\x00\x00\x00'
+        data += b'\x05\x00\x00\x00'
+        data += b'\x01\x00\x00\x00'
+        data += b'\x28\x0A\x00\x00'
+        data += b'\x02\x00\x00\x00'
+        data += (self.host_os.encode() + 32*b'\x00')[:32]
+        data += b'\x00'*96
+        data += self.AUTH_VERSION
         if self.ror_version:
-            data.append(b'\x00')
-            data.append(bytes([len(self.password)]))
-            data.append(
-                ror(md5sum(b'\x03\x01' + self.SALT + self.password), self.password)
-            )
-        data.append(b'\x02\x0c')
-        data.append(
-            checksum(b''.join(data) +
-                     b'\x01\x26\x07\x11\x00\x00' + dump(self.mac))
-        )
-        data.append(b'\x00\x00\xe9\x13')
+            data += b'\x00'
+            data += bytes([len(self.password)])
+            data += ror(md5sum(b'\x03\x01' + self.SALT + self.password), self.password)
 
-        data = b''.join(data)
+        data += b'\x02\x0c'
+        data += checksum(
+            data + b'\x01\x26\x07\x11\x00\x00' + dump(self.mac)
+        )
+
+        data += b'\x00\x00\xe9\x13'
 
         logging.info('[mkpkt]')
         logging.debug(str(binascii.hexlify(data))[2:][:-1])
         return data
 
     def keepAlive1(self, tail):
-        data = []
+        data = b''
         foo = struct.pack("!H", int(time.time()) % 0xffff)
-        data.append(
-            b'\xff' + md5sum(
+        data += b'\xff' + md5sum(
                 b'\x03\x01' + self.SALT + self.password.encode()
             ) + b'\x00\x00\x00'
-        )
-        data.append(tail)
-        data.append(foo + b'\x00\x00\x00\x00')
-        data = b''.join(data)
+
+        data += tail
+        data += foo + b'\x00\x00\x00\x00'
+
         logging.info('[keepAlive1] send')
         logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
@@ -319,6 +306,7 @@ class Drcom:
 
         svr_num_copy = svr_num
 
+        # 稳定状态
         while True:
             try:
                 time.sleep(20)
@@ -375,7 +363,11 @@ class Drcom:
             logging.info('[login] send')
             logging.debug(str(binascii.hexlify(packet))[2:][:-1])
 
-            data, address = self.socket.recvfrom(1024)
+            try:
+                data, address = self.socket.recvfrom(1024)
+            except socket.timeout:
+                continue
+
             logging.info('[login] recv')
             logging.debug(str(binascii.hexlify(data))[2:][:-1])
             logging.info('[login] packet sent.')
@@ -398,20 +390,19 @@ class Drcom:
 
     def logout(self):
         salt = self.challenge(time.time()+random.randint(0xF, 0xFF))
-        data = []
+        data = b''
         if salt:
-            data.append(b'\x06\x01\x00' + bytes([len(self.username) + 20]))
-            data.append(md5sum(b'\x03\x01' + salt + self.password.encode()))
-            data.append((self.username.encode() + 36*b'\x00')[:36])
-            data.append(self.CONTROL_CHECK_STATUS)
-            data.append(self.ADAPTER_NUM)
-            data.append(
-                dump(
+            data += b'\x06\x01\x00' + bytes([len(self.username) + 20])
+            data += md5sum(b'\x03\x01' + salt + self.password.encode())
+            data += (self.username.encode() + 36*b'\x00')[:36]
+            data += self.CONTROL_CHECK_STATUS
+            data += self.ADAPTER_NUM
+            data += dump(
                     int(binascii.hexlify(b''.join(data[4:10])), 16) ^ self.mac
                 )[-6:]
-            )
-            data.append(self.AUTH_INFO)
-            data = b''.join(data)
+
+            data += self.AUTH_INFO
+
             self.socket.sendto(data, (self.server, self.port))
             data, address = self.socket.recvfrom(1024)
             if data[:1] == b'\x04':
