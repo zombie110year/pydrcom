@@ -34,10 +34,12 @@ class RuntimeCounter:
         self.__max = max
         self.__counter = 0
 
-    def __call__(self):
+    def __call__(self, msg=""):
         self.__counter += 1
         if self.__counter >= self.__max:
-            print("程序异常退出\a")
+            if msg:
+                print(msg, file=sys.stderr)
+            print("程序异常退出\a", sys.stderr)
             sys.exit(-1)
 
     def clear(self):
