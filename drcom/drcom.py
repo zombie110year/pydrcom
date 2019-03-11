@@ -411,17 +411,17 @@ class Drcom:
 
     def emptySocketBuffer(self):
         logging.info('starting to empty socket buffer')
-        try:
-            while True:
+        while True:
+            try:
                 data, address = self.socket.recvfrom(1024)
-                logging.info('recived sth unexpected')
-                logging.debug(str(binascii.hexlify(data))[2:][:-1])
-                if self.socket == '':
-                    break
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            logging.exception('exception in emptySocketBuffer')
+            except socket.timeout:
+                self.counter()
+                logging.exception('TimeOut in emptySocketBuffer')
+                continue
+            logging.info('recived sth unexpected')
+            logging.debug(str(binascii.hexlify(data))[2:][:-1])
+            if self.socket == '':
+                break
         logging.info('Emptied')
 
     def run(self):
