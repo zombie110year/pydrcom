@@ -81,21 +81,42 @@ def daemon():
         file.write(str(os.getpid()))
 
 
-def getIP(ifname):
-    """获取目标网卡所占的 IP 地址
-    Linux 下可用.
+# def getIP(ifname):
+#     """获取目标网卡所占的 IP 地址
+#     Linux 下可用.
 
-    原理可以看 https://bitmingw.com/2018/05/06/get-ip-address-of-network-interface-in-python/
+#     原理可以看 https://bitmingw.com/2018/05/06/get-ip-address-of-network-interface-in-python/
 
-    :param str ifname: 目标网卡的命名, 可以使用 ifconfig 查看, 例如 ``eth0``.
+#     :param str ifname: 目标网卡的命名, 可以使用 ifconfig 查看, 例如 ``eth0``.
+#     """
+#     import socket
+#     import fcntl
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     return socket.inet_ntoa(
+#         fcntl.ioctl(
+#             s.fileno(),
+#             0x8915,
+#             struct.pack('40s', ifname[:15].encode("utf-8"))
+#         )[20:24]
+#     )
+
+def getIP():
+    """更通用的获取 IP 地址的方法:
+        通过构造一个连接向非本地的 UDP 包, 获取自身 IP 信息
+
+        并不会真实发包.
     """
     import socket
-    import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(
-        fcntl.ioctl(
-            s.fileno(),
-            0x8915,
-            struct.pack('40s', ifname[:15].encode("utf-8"))
-        )[20:24]
-    )
+    s.connect(('8.8.8.8', 80))
+    ip, port = s.getsockname()
+    return ip
+
+def getMacAdress():
+    """获取网卡 mac 地址
+
+    :rtype: int
+    """
+    import uuid
+    node = uuid.getnode()
+    return node
