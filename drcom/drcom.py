@@ -12,7 +12,7 @@ import sys
 import time
 
 from .utils import (ChallengeException, LoginException, RuntimeCounter,
-                    checksum, daemon, dump, getIP, md5sum, ror)
+                    checksum, daemon, dump, getIP, getMacAdress, md5sum, ror)
 
 
 class Drcom:
@@ -25,7 +25,6 @@ class Drcom:
 
     def setConf(self, conf):
 
-        self.SYSTEM = conf.SYSTEM
         self.username = conf.username
         self.password = conf.password
         self.server = conf.server
@@ -33,9 +32,9 @@ class Drcom:
         self.dhcp_server = conf.dhcp_server
         self.host_name = conf.host_name
         self.host_os = conf.host_os
-        self.host_ip = conf.host_ip
-        self.mac = conf.mac
-        self.bind_ip = conf.bind_ip
+        self.host_ip = getIP()          # 自动获取 IP 地址
+        self.mac = getMacAdress()       # 自动获取 Mac 地址
+        self.bind_ip = "0.0.0.0"        # 必须绑定在 0.0.0.0
         self.port = conf.port
         self.nic_name = conf.nic_name
         self.LOG_FILE = None
@@ -47,11 +46,6 @@ class Drcom:
         self.IPDOG = conf.IPDOG
         self.SALT = conf.SALT
         self.ror_version = conf.ror_version
-
-        if self.SYSTEM == "Linux":
-            ip = getIP(self.nic_name)
-            if re.match(r"(\d{1,3}\.){3}(\d{1,3})", ip):
-                self.host_ip = ip
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         for i in range(60000, 65535):
