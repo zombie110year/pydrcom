@@ -302,8 +302,8 @@ class Drcom:
 
         # 稳定状态
         while True:
+            time.sleep(20)
             try:
-                time.sleep(20)
                 self.keepAlive1(package_tail)
                 rand_num += random.randint(1, 10)
                 package = self.makeKeepAlivePackage(
@@ -317,7 +317,12 @@ class Drcom:
                 logging.debug(str(svr_num_copy))
                 logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
-                data, address = self.socket.recvfrom(1024)
+                try:
+                    data, address = self.socket.recvfrom(1024)
+                except socket.timeout:
+                    self.counter()
+
+                self.counter.clear()
                 logging.info('[keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
@@ -334,17 +339,19 @@ class Drcom:
                 logging.debug(str(svr_num_copy+1))
                 logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
-                data, address = self.socket.recvfrom(1024)
+                try:
+                    data, address = self.socket.recvfrom(1024)
+                except socket.timeout:
+                    self.counter()
+                self.counter.clear()
+
                 logging.info('[keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
 
                 svr_num_copy = (svr_num_copy + 2) % 127
-                self.counter.clear()
             except KeyboardInterrupt:
                 self.logout()
-            except:
-                self.counter()
 
     def login(self):
         i = 0
