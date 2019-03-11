@@ -427,14 +427,14 @@ class Drcom:
             username:  {username}
             password:  {password}
             mac:       0x{mac:x}
-            bind_ip:   {ip}
+            host_ip:   {ip}
             bind_port: {bind_port}
             """.format(
                 server=self.server,
                 username=self.username,
                 password='*'*len(self.password),
                 mac=self.mac,
-                ip=self.bind_ip,
+                ip=self.host_ip,
                 bind_port=self.bind_port,
             )
         )
