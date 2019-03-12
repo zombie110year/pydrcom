@@ -59,7 +59,7 @@ class Drcom:
         logging.basicConfig(
             level=getattr(logging, self.LOG_LEVEL, logging.DEBUG),
             stream=sys.stderr,
-            format="{levelname}: {message}",
+            format="{asctime} - {levelname}: {message}",
             style="{",
         )
 
@@ -81,7 +81,7 @@ class Drcom:
             )
             try:
                 data, address = self.socket.recvfrom(1024)
-                logging.info('[challenge] recv')
+                logging.info('    [challenge] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 self.counter.clear()
             except socket.timeout:
@@ -212,7 +212,7 @@ class Drcom:
                 logging.info('[keepAlive1] recv/unexpected')
                 logging.debug(str((binascii.hexlify(data))[2:][:-1]))
 
-        logging.info('[keepAlive1] recv')
+        logging.info('    [keepAlive1] recv')
         logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
     def keepAlive2(self, package_tail):
@@ -308,7 +308,7 @@ class Drcom:
 
         # 稳定状态
         while True:
-            time.sleep(20)
+            print()     # 把日志输出分隔开
             try:
                 self.keepAlive1(package_tail)
                 rand_num += random.randint(1, 10)
@@ -329,7 +329,7 @@ class Drcom:
                     self.counter()
 
                 self.counter.clear()
-                logging.info('[keepAlive2] recv')
+                logging.info('    [keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
                 rand_num += random.randint(1, 10)
@@ -351,13 +351,14 @@ class Drcom:
                     self.counter()
                 self.counter.clear()
 
-                logging.info('[keepAlive2] recv')
+                logging.info('    [keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
 
                 svr_num_copy = (svr_num_copy + 2) % 127
             except KeyboardInterrupt:
                 self.logout()
+            time.sleep(20)
 
     def login(self):
         i = 0
@@ -375,7 +376,7 @@ class Drcom:
             except socket.timeout:
                 continue
 
-            logging.info('[login] recv')
+            logging.info('    [login] recv')
             logging.debug(str(binascii.hexlify(data))[2:][:-1])
             logging.info('[login] packet sent.')
 
