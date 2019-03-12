@@ -199,8 +199,14 @@ class Drcom:
         self.socket.sendto(data, (self.server, self.port))
 
         while True:
-            data, address = self.socket.recvfrom(1024)
-            if data[:1] == b'\x07':
+
+            try:
+                data_, address = self.socket.recvfrom(1024)
+            except socket.timeout:
+                self.socket.sendto(data, (self.server, self.port))
+                continue
+
+            if data_[:1] == b'\x07':
                 break
             else:
                 logging.info('[keepAlive1] recv/unexpected')
