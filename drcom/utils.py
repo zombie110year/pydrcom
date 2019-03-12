@@ -39,7 +39,7 @@ class RuntimeCounter:
         if self.__counter >= self.__max:
             if msg:
                 print(msg, file=sys.stderr)
-            print("程序异常退出\a", sys.stderr)
+            print("程序异常退出\a", file=sys.stderr)
             sys.exit(-1)
 
     def clear(self):
