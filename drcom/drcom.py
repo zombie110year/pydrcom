@@ -416,12 +416,8 @@ class Drcom:
             try:
                 data, address = self.socket.recvfrom(1024)
             except socket.timeout:
-                self.counter()
-                logging.exception('TimeOut in emptySocketBuffer')
-                continue
-            logging.info('recived sth unexpected')
-            logging.debug(str(binascii.hexlify(data))[2:][:-1])
-            if self.socket == '':
+                logging.info('recived sth unexpected')
+                logging.debug(data)
                 break
         logging.info('Emptied')
 
