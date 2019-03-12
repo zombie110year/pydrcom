@@ -34,6 +34,12 @@ class RuntimeCounter:
         self.__max = max
         self.__counter = 0
 
+    def __repr__(self):
+        return "RuntimeCounter<{}/{}>".format(
+            self.__counter,
+            self.__max
+        )
+
     def __call__(self, msg=""):
         self.__counter += 1
         if self.__counter >= self.__max:

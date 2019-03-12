@@ -5,3 +5,4 @@ dist
 conf.py
 *.egg-info
 debug
+.pytest_cache
