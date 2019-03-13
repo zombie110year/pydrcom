@@ -124,7 +124,6 @@ def getConfigFileContent(paths):
         raise FileNotFoundError("找不到可用的配置文件")
 
 
-
 def configure():
 
     arg = getCliArgs()

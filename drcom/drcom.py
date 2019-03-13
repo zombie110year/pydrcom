@@ -12,7 +12,7 @@ import sys
 import time
 
 from .utils import (ChallengeException, LoginException, RuntimeCounter,
-                    checksum, daemon, dump, getIP, md5sum, ror)
+                    checksum, daemon, dump, getIP, getMacAdress, md5sum, ror)
 
 
 class Drcom:
@@ -25,7 +25,6 @@ class Drcom:
 
     def setConf(self, conf):
 
-        self.SYSTEM = conf.SYSTEM
         self.username = conf.username
         self.password = conf.password
         self.server = conf.server
@@ -33,9 +32,9 @@ class Drcom:
         self.dhcp_server = conf.dhcp_server
         self.host_name = conf.host_name
         self.host_os = conf.host_os
-        self.host_ip = conf.host_ip
-        self.mac = conf.mac
-        self.bind_ip = conf.bind_ip
+        self.host_ip = getIP()          # 自动获取 IP 地址
+        self.mac = getMacAdress()       # 自动获取 Mac 地址
+        self.bind_ip = "0.0.0.0"        # 必须绑定在 0.0.0.0
         self.port = conf.port
         self.nic_name = conf.nic_name
         self.LOG_FILE = None
@@ -47,11 +46,6 @@ class Drcom:
         self.IPDOG = conf.IPDOG
         self.SALT = conf.SALT
         self.ror_version = conf.ror_version
-
-        if self.SYSTEM == "Linux":
-            ip = getIP(self.nic_name)
-            if re.match(r"(\d{1,3}\.){3}(\d{1,3})", ip):
-                self.host_ip = ip
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         for i in range(60000, 65535):
@@ -65,7 +59,7 @@ class Drcom:
         logging.basicConfig(
             level=getattr(logging, self.LOG_LEVEL, logging.DEBUG),
             stream=sys.stderr,
-            format="{levelname}: {message}",
+            format="{asctime} - {levelname}: {message}",
             style="{",
         )
 
@@ -87,7 +81,7 @@ class Drcom:
             )
             try:
                 data, address = self.socket.recvfrom(1024)
-                logging.info('[challenge] recv')
+                logging.info('    [challenge] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 self.counter.clear()
             except socket.timeout:
@@ -205,14 +199,20 @@ class Drcom:
         self.socket.sendto(data, (self.server, self.port))
 
         while True:
-            data, address = self.socket.recvfrom(1024)
-            if data[:1] == b'\x07':
+
+            try:
+                data_, address = self.socket.recvfrom(1024)
+            except socket.timeout:
+                self.socket.sendto(data, (self.server, self.port))
+                continue
+
+            if data_[:1] == b'\x07':
                 break
             else:
                 logging.info('[keepAlive1] recv/unexpected')
                 logging.debug(str((binascii.hexlify(data))[2:][:-1]))
 
-        logging.info('[keepAlive1] recv')
+        logging.info('    [keepAlive1] recv')
         logging.debug(str(binascii.hexlify(data))[2:][:-1])
 
     def keepAlive2(self, package_tail):
@@ -308,8 +308,8 @@ class Drcom:
 
         # 稳定状态
         while True:
+            print()     # 把日志输出分隔开
             try:
-                time.sleep(20)
                 self.keepAlive1(package_tail)
                 rand_num += random.randint(1, 10)
                 package = self.makeKeepAlivePackage(
@@ -323,8 +323,13 @@ class Drcom:
                 logging.debug(str(svr_num_copy))
                 logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
-                data, address = self.socket.recvfrom(1024)
-                logging.info('[keepAlive2] recv')
+                try:
+                    data, address = self.socket.recvfrom(1024)
+                except socket.timeout:
+                    self.counter()
+
+                self.counter.clear()
+                logging.info('    [keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
                 rand_num += random.randint(1, 10)
@@ -340,17 +345,20 @@ class Drcom:
                 logging.debug(str(svr_num_copy+1))
                 logging.debug(str(binascii.hexlify(package))[2:][:-1])
 
-                data, address = self.socket.recvfrom(1024)
-                logging.info('[keepAlive2] recv')
+                try:
+                    data, address = self.socket.recvfrom(1024)
+                except socket.timeout:
+                    self.counter()
+                self.counter.clear()
+
+                logging.info('    [keepAlive2] recv')
                 logging.debug(str(binascii.hexlify(data))[2:][:-1])
                 tail = data[16:20]
 
                 svr_num_copy = (svr_num_copy + 2) % 127
-                self.counter.clear()
             except KeyboardInterrupt:
                 self.logout()
-            except:
-                self.counter()
+            time.sleep(20)
 
     def login(self):
         i = 0
@@ -368,7 +376,7 @@ class Drcom:
             except socket.timeout:
                 continue
 
-            logging.info('[login] recv')
+            logging.info('    [login] recv')
             logging.debug(str(binascii.hexlify(data))[2:][:-1])
             logging.info('[login] packet sent.')
 
@@ -411,17 +419,13 @@ class Drcom:
 
     def emptySocketBuffer(self):
         logging.info('starting to empty socket buffer')
-        try:
-            while True:
+        while True:
+            try:
                 data, address = self.socket.recvfrom(1024)
+            except socket.timeout:
                 logging.info('recived sth unexpected')
-                logging.debug(str(binascii.hexlify(data))[2:][:-1])
-                if self.socket == '':
-                    break
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            logging.exception('exception in emptySocketBuffer')
+                logging.debug(data)
+                break
         logging.info('Emptied')
 
     def run(self):
@@ -433,14 +437,14 @@ class Drcom:
             username:  {username}
             password:  {password}
             mac:       0x{mac:x}
-            bind_ip:   {ip}
+            host_ip:   {ip}
             bind_port: {bind_port}
             """.format(
                 server=self.server,
                 username=self.username,
                 password='*'*len(self.password),
                 mac=self.mac,
-                ip=self.bind_ip,
+                ip=self.host_ip,
                 bind_port=self.bind_port,
             )
         )
