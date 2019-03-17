@@ -53,12 +53,20 @@ class RuntimeCounter:
 
 
 def md5sum(x):
+    """md5 字节
+    """
     m = md5()
     m.update(x)
     return m.digest()
 
 
 def dump(n):
+    """将整数转换为对应的十六进制表示,
+    不足一个字节则填零::
+
+        0x03 -> '03'
+        0x13 -> '13'
+    """
     s = '%x' % n
     if len(s) & 1:  # 奇数
         s = '0' + s

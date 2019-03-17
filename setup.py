@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 PROJECT_NAME = "pydrcom"
 VERSION = "1.1.2"
-DESCRIPTION = open("docs/description", "rt", encoding="utf-8").read()
+DESCRIPTION = open("docs/_static/description", "rt", encoding="utf-8").read()
 
 setup(
     name=PROJECT_NAME,

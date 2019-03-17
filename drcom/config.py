@@ -125,6 +125,8 @@ def getConfigFileContent(paths):
 
 
 def configure():
+    """启动时调用, 返回解析的配置
+    """
 
     arg = getCliArgs()
     conf = getConfigFileContent(arg.config)
