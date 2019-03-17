@@ -510,7 +510,7 @@ class Drcom:
             data += self.CONTROL_CHECK_STATUS
             data += self.ADAPTER_NUM
             data += dump(
-                    int(binascii.hexlify(b''.join(data[4:10])), 16) ^ self.mac
+                    int(binascii.hexlify(data[4:10]), 16) ^ self.mac
                 )[-6:]
 
             data += self.AUTH_INFO
