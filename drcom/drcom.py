@@ -308,6 +308,7 @@ class Drcom:
                 # self.counter('keepAlive1 超时')
                 continue
 
+            self.counter.clear()
             if data[:1] == b'\x07':
                 break
             else:
@@ -528,7 +529,7 @@ class Drcom:
                 data, address = self.socket.recvfrom(1024)
             except socket.timeout:
                 logging.info('recived sth unexpected')
-                logging.debug(data)
+                # logging.debug(data)
                 break
         logging.info('Emptied')
 
