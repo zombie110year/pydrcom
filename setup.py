@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 PROJECT_NAME = "pydrcom"
-VERSION = "1.1.2"
+VERSION = "2.0.0"
 DESCRIPTION = open("docs/_static/description", "rt", encoding="utf-8").read()
 
 setup(

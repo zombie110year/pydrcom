@@ -40,7 +40,6 @@ class Drcom:
         self.mac = getMacAdress()       # 自动获取 Mac 地址
         self.bind_ip = "0.0.0.0"        # 必须绑定在 0.0.0.0
         self.port = conf.port
-        # self.nic_name = conf.nic_name
         self.CONTROL_CHECK_STATUS = conf.CONTROL_CHECK_STATUS
         self.ADAPTER_NUM = conf.ADAPTER_NUM
         self.KEEP_ALIVE_VERSION = conf.KEEP_ALIVE_VERSION
@@ -58,13 +57,6 @@ class Drcom:
                 break
             except OSError:  # errno 98 address already in use
                 continue
-
-        # logging.basicConfig(
-        #     level=getattr(logging, self.LOG_LEVEL, logging.DEBUG),
-        #     stream=sys.stderr,
-        #     format="{asctime} - {levelname}: {message}",
-        #     style="{",
-        # )
 
         self.logger = logger
 
