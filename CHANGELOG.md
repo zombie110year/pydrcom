@@ -16,3 +16,15 @@
 从字节列表的合成修改回字节的加法赋值.
 
 发现在 Python 中, bytes 和 str 不一样, 使用加法赋值更有效率.
+
+# v2.0.0
+
+重构代码:
+
+1. 将 daemon 函数的调用 从 drcom.Drcom.run 移动到 entry.main 中.
+2. 拆分 drcom.Drcom.login 模块, 便于维护.
+3. 将日志中显示字节的功能封装为一个函数 utils.showBytes
+4. 将 Drcom app 中的 RuntimeCounter 变为局部的 RuntimeCounter
+5. 拆分了 keepAlive 函数, 便于维护.
+6. 添加了 logout 功能, 当程序运行期间使用 Ctrl+C 则调用 drcom.Drcom.logout
+7. 修改了 utils.RuntimeCounter, 可以传入一个函数指定超限时动作.
