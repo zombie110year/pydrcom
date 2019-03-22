@@ -40,13 +40,20 @@ class RuntimeCounter:
             self.__max
         )
 
-    def __call__(self, msg=""):
-        self.__counter += 1
+    def __call__(self, action=None, args=(), kwargs={}):
+        """当 RuntimeCounter 的计数超过限度时,
+        调用 action, args, 和 kwargs 是传给 action 的参数.
+
+        :param action: 一个函数
+        :param list args: 传递给 action 的参数列表
+        :param dict kwargs: 传递给 action 的命名参数列表
+        """
         if self.__counter >= self.__max:
-            if msg:
-                print(msg, file=sys.stderr)
-            print("程序异常退出\a", file=sys.stderr)
+            if callable(action):
+                action(*args, **kwargs)
             sys.exit(-1)
+        else:
+            self.__counter += 1
 
     def clear(self):
         self.__counter = 0
@@ -129,6 +136,7 @@ def getIP():
     s.close()
     return ip
 
+
 def getMacAdress():
     """获取网卡 mac 地址
 
@@ -137,3 +145,7 @@ def getMacAdress():
     import uuid
     node = uuid.getnode()
     return node
+
+
+def showBytes(b):
+    return binascii.hexlify(b)[2:][:-1]

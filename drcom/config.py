@@ -61,6 +61,19 @@ class GenerateFileAction(Action):
         parser.exit()
 
 
+class SetLoggingLevelAction(Action):
+    levels = {
+        "DEBUG": 10,
+        "INFO": 20,
+        "WARNING": 40,
+        "ERROR": 50
+    }
+
+    def __call__(self, parser, namespace, values, option_string):
+        level_code = self.levels.get(values)
+        setattr(namespace, self.dest, level_code)
+
+
 def getCliArgs():
     parser = ArgumentParser(
         prog="Drcom Python Client",
@@ -83,8 +96,10 @@ def getCliArgs():
     parser.add_argument(
         "--log",
         help="设定日志级别",
-        choices=["ERROR", "INFO", "DEBUG"],
-        default="INFO"
+        choices=["ERROR", "WARNING", "INFO", "DEBUG"],
+        default=20,
+        type=str,
+        action=SetLoggingLevelAction
     )
     arg = parser.parse_args()
     return arg
