@@ -103,13 +103,10 @@ class GenerateFileAction(Action):
             help=help)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        file = get_data(__package__, "drcom.conf").decode("utf-8")
+        conf = DrcomConfig()
         target_file = Path("./drcom.conf")
-        with target_file.open("wt", encoding="utf-8") as target:
-            target.write(file)
-        print(
-            "配置文件生成于 {}".format(target_file.absolute())
-        )
+        conf.dump(target_file)
+        print("配置文件生成于 {}".format(target_file.absolute()))
         parser.exit()
 
 
