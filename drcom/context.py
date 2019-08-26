@@ -17,7 +17,26 @@ from .utils import (ChallengeException, LoginException, RuntimeCounter,
 class DrcomContext:
     """Drcom 运行时上下文
 
-    只做纯粹的发包, 解包工作
+    只做纯粹的发包, 解包工作.
+
+    初始化上下文
+    ============
+
+    :param str server:      Drcom 认证服务器的地址
+    :param str username:    校园网账号
+    :param str password:    校园网密码
+    :param int mac:         本机 mac 地址
+    :param str host_ip:     本机 IP 地址
+    :param str host_name:   本机主机名
+    :param str host_os:     本机操作系统名
+    :param str dhcp:        dhcp 服务器地址
+    :param str dns:         dns 服务器地址
+    :param bytes CONTROL_CHECK_STATUS:
+    :param bytes ADAPTER_NUM:
+    :param bytes IP_DOG:
+    :param bytes AUTH_VERSION:
+    :param bytes SALT:
+    :param bytes ROR_VERSION:
     """
     def __init__(self,
         server: str,

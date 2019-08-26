@@ -22,7 +22,22 @@ class DrcomApp:
         self.core = config["core"]
 
 
-    def makeContext(self) -> DrcomContext:
+    def initContext(self) -> DrcomContext:
         dc = DrcomContext(
-
+            server=self.drcom["server"],
+            username=self.drcom["username"],
+            password=self.drcom["password"],
+            mac=self.drcom["mac"],
+            host_ip=self.drcom["host_ip"],
+            host_name=self.drcom["host_name"],
+            host_os=self.drcom["host_os"],
+            dhcp=self.drcom["dhcp"],
+            dns=self.drcom["dns"],
+            CONTROL_CHECK_STATUS=self.core["CONTROL_CHECK_STATUS"],
+            ADAPTER_NUM=self.core["ADAPTER_NUM"],
+            IP_DOG=self.core["IP_DOG"],
+            AUTH_VERSION=self.core["AUTH_VERSION"],
+            SALT=self.core["SALT"],
+            ROR_VERSION=self.core["ROR_VERSION"],
         )
+        return dc
