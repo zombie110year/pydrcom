@@ -1,15 +1,9 @@
 import logging
 from platform import platform
 
-from .config import configure, getConfigFileContent
+from .config import configure
 from .drcom import Drcom
 from .utils import daemon
-
-
-def _main(conf_path):
-    conf = getConfigFileContent(conf_path)
-    app = Drcom(conf)
-    return app
 
 
 def main():
