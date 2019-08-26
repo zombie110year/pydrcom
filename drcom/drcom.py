@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import binascii
-import logging
 import platform
 import random
 import re
@@ -28,7 +27,7 @@ class Drcom:
     :type conf: :class:`Namespace`
     """
 
-    def __init__(self, conf, logger: logging.Logger):
+    def __init__(self, conf):
         self.username = conf.username
         self.password = conf.password
         self.server = conf.server
@@ -58,8 +57,6 @@ class Drcom:
             except OSError:  # errno 98 address already in use
                 continue
 
-        self.logger = logger
-
         self.socket.settimeout(3)
         # 将在 login 时被赋值, 在 logout 时使用
         self.AUTH_INFO = None
@@ -75,32 +72,19 @@ class Drcom:
             )
             try:
                 data, address = self.socket.recvfrom(1024)
-                self.logger.info('    [challenge] recv')
-                self.logger.debug(showBytes(data))
                 counter.clear()
             except socket.timeout:
-                self.logger.warning('[challenge] timeout, retrying...')
                 counter()
                 continue
-
             if address == (self.server, self.port):
                 break
-
-            self.logger.info('[DEBUG] challenge')
-            self.logger.debug(showBytes(data))
-
             if data[:1] != b'\x02':     # 对字节不要 data[0]
                 raise ChallengeException()
-
-            self.logger.info('[challenge] challenge packet sent.')
-
         return data[4:8]
 
     def makeKeepAlivePackage(self, num, tail, type_=1, first=False):
         data = b''
-
         data += b'\x07' + bytes([num]) + b'\x28\x00\x0B' + bytes([type_])
-
         if first:
             data += b'\x0f\x27'
         else:
@@ -108,7 +92,6 @@ class Drcom:
         data += b'\x2F\x12' + b'\x00'*6
         data += tail
         data += b'\x00'*4
-
         if type_ == 3:
             foo = b''.join(
                 [bytes([int(i)]) for i in self.host_ip.split('.')]
@@ -117,11 +100,9 @@ class Drcom:
             data += crc + foo + b'\x00'*8
         else:
             data += b'\x00'*16
-
         return data
 
     def mkpkt(self):
-
         data = b''
         """
         struct  _tagLoginPacket {
@@ -227,9 +208,7 @@ class Drcom:
         # _tagOSVersionInfo.ServicePack
         data += (self.host_os.encode() + 32*b'\x00')[:32]
         data += b'\x00'*96
-
         data += self.AUTH_VERSION
-
         if self.ror_version:
             """
             struct _tagLDAPAuth {
@@ -245,7 +224,6 @@ class Drcom:
             # _tagLDAPAuth.Password
             data += ror(md5sum(b'\x03\x01' + self.SALT +
                                self.password), self.password)
-
         """
         struct  _tagDrcomAuthExtData {
             unsigned char Code;
@@ -263,36 +241,26 @@ class Drcom:
         data += checksum(
             data + b'\x01\x26\x07\x11\x00\x00' + dump(self.mac)
         )
-
         # _tagDrcomAuthExtData.Option
         data += b'\x00\x00'
         # _tagDrcomAuthExtData.AdapterAddress
         data += dump(self.mac)
-
         # auto logout / default: False
         data += b'\x00'
         # broadcast mode / default: False
         data += b'\x00'
         # unknown, 随机填充的
         data += b'\xe9\x13'
-
-        self.logger.info('[mkpkt]')
-        self.logger.debug(showBytes(data))
         return data
 
     def keepAlive(self, auth_info):
         srv_num = 0
         tail = b'\x00\x00\x00\x00'
-
         self.__keepAlive1(auth_info)
         tail, srv_num = self.__keepAlive2(srv_num, tail)
-
-        self.logger.info("[keepAlive2] keepAlive2 loop was in daemon.")
         time.sleep(self.KEEPALIVE_INTERVAL)
-
         # 稳定状态
         while True:
-            print()     # 把日志输出分隔开
             self.__keepAlive1(auth_info)
             srv_num, tail = self.__keepAlive2_stable(srv_num, tail)
             time.sleep(self.KEEPALIVE_INTERVAL)
@@ -304,32 +272,18 @@ class Drcom:
         data += b'\xff' + md5sum(
                 b'\x03\x01' + self.SALT + self.password.encode()
         ) + b'\x00\x00\x00'
-
         data += tail
         data += foo + b'\x00\x00\x00\x00'
-
-        self.logger.info('[keepAlive1] send')
-        self.logger.debug(showBytes(data))
-
         self.socket.sendto(data, (self.server, self.port))
-
         while True:
-
             try:
                 data, address = self.socket.recvfrom(1024)
             except socket.timeout:
                 counter('keepAlive1 超时')
                 continue
-
             counter.clear()
             if data[:1] == b'\x07':
                 break
-            else:
-                self.logger.info('[keepAlive1] recv/unexpected')
-                self.logger.debug(showBytes(data))
-
-        self.logger.info('    [keepAlive1] recv')
-        self.logger.debug(showBytes(data))
 
     def __keepAlive2(self, srv_num, tail):
         srv_num = self.__keepAlive2_1(srv_num, tail)
@@ -346,39 +300,24 @@ class Drcom:
         )
         while True:
             self.socket.sendto(package, (self.server, self.port))
-            self.logger.info('[keepAlive2] send1')
-            self.logger.debug(showBytes(package))
-
             data, address = self.socket.recvfrom(1024)
-            self.logger.info('[keepAlive2] recv1')
-            self.logger.debug(showBytes(data))
-
             if (
                 data.startswith(b'\x07\x00\x28\x00') or
                 data.startswith(b'\x07' + bytes([srv_num]) + b'\x28\x00')
             ):
                 break
             elif data[:1] == b'\x07' and data[2:3] == b'\x10':
-                self.logger.info('[keepAlive2] recv file, resending..')
                 break
-            else:
-                self.logger.info("[keepAlive2] recv1/unexpected")
-                self.logger.debug(showBytes(data))
-
         return srv_num + 1
 
     def __keepAlive2_2(self, srv_num, tail):
         counter = RuntimeCounter()
-
         package = self.makeKeepAlivePackage(
             num=srv_num,
             tail=tail,
             type_=1,
         )
         self.socket.sendto(package, (self.server, self.port))
-        self.logger.info('[keepAlive2] send2')
-        self.logger.debug(showBytes(package))
-
         while True:
             data, address = self.socket.recvfrom(1024)
             if data[:1] == b'\x07':
@@ -386,12 +325,6 @@ class Drcom:
                 break
             else:
                 counter()
-                self.logger.info('[keepAlive2] recv2/unexpected')
-                self.logger.debug(showBytes(data))
-
-        self.logger.info('[keepAlive2] recv2')
-        self.logger.debug(showBytes(data))
-
         return data[16:20], srv_num + 1  # tail
 
     def __keepAlive2_3(self, srv_num, tail):
@@ -401,30 +334,19 @@ class Drcom:
             type_=3
         )
         counter = RuntimeCounter()
-
         self.socket.sendto(package, (self.server, self.port))
-
         while True:
             data, address = self.socket.recvfrom(1024)
-
             if data[:1] == b'\x07':
                 counter.clear()
                 break
             else:
-                self.logger.info('[keepAlive2] recv3/unexpected')
-                self.logger.debug(showBytes(data))
                 counter()
-
-        self.logger.info('[keepAlive2] recv3')
-        self.logger.debug(showBytes(data))
-
         return data[16:20], srv_num + 1  # tail
 
     def __keepAlive2_stable(self, srv_num, tail):
-
         tail = self.__keepAlive2_stable_1(srv_num, tail)
         tail, srv_num = self.__keepAlive2_stable_2(srv_num, tail)
-
         return srv_num, tail
 
     def __keepAlive2_stable_1(self, srv_num, tail):
@@ -435,22 +357,13 @@ class Drcom:
                 type_=1
             )
             counter = RuntimeCounter()
-
             self.socket.sendto(package, (self.server, self.port))
-            self.logger.info('[keepAlive2] send')
-            self.logger.debug(str(srv_num))
-            self.logger.debug(showBytes(package))
-
             try:
                 data, address = self.socket.recvfrom(1024)
             except socket.timeout:
                 counter()
                 continue
-
             counter.clear()
-            self.logger.info('    [keepAlive2] recv')
-            self.logger.debug(showBytes(data))
-
             return data[16:20]  # tail
 
     def __keepAlive2_stable_2(self, srv_num, tail):
@@ -459,25 +372,15 @@ class Drcom:
             tail=tail,
             type_=3,
         )
-
         counter = RuntimeCounter()
-
         self.socket.sendto(package, (self.server, self.port))
-        self.logger.info('[keepAlive2] send')
-        self.logger.debug(str(srv_num+1))
-        self.logger.debug(showBytes(package))
-
         try:
             data, address = self.socket.recvfrom(1024)
         except socket.timeout:
             counter()
         counter.clear()
-
-        self.logger.info('    [keepAlive2] recv')
-        self.logger.debug(showBytes(data))
         tail = data[16:20]
         srv_num = (srv_num + 2) % 127
-
         return tail, srv_num
 
     def login(self):
@@ -507,25 +410,17 @@ class Drcom:
 
     def __login_send(self, packet, server, port):
         self.socket.sendto(packet, (server, port))
-        self.logger.info('[login] send')
-        self.logger.debug(showBytes(packet))
 
     def __login_recv(self):
         data, address = self.socket.recvfrom(1024)
-        self.logger.info('    [login] recv')
-        self.logger.debug(showBytes(data))
-        self.logger.info('[login] packet sent.')
         return data, address
 
     def __login_check(self, server, port, data, address, counter: RuntimeCounter):
         if address == (server, port):
             if data[:1] == b'\x04':
-                self.logger.info('[login] loged in')
                 counter.clear()
                 return data[23:39]
             else:
-                self.logger.warning('[login] login failed.')
-                self.logger.debug(showBytes(data))
                 counter('多次登录失败')
                 return None
         else:
@@ -550,22 +445,17 @@ class Drcom:
             self.socket.sendto(data, (self.server, self.port))
             data, address = self.socket.recvfrom(1024)
             if data[:1] == b'\x04':
-                self.logger.info('[logout] logouted.')
                 exit(0)
 
     def emptySocketBuffer(self):
-        self.logger.info('starting to empty socket buffer')
         while True:
             try:
                 data, address = self.socket.recvfrom(1024)
             except socket.timeout:
-                self.logger.info('recived sth unexpected')
-                # self.logger.debug(data)
                 break
-        self.logger.info('Emptied')
 
     def run(self):
-        self.logger.info(
+        print(
             """
             auth svr:  {server}
             username:  {username}
@@ -582,10 +472,6 @@ class Drcom:
                 bind_port=self.bind_port,
             )
         )
-
         auth_info = self.login()
-
-        self.logger.debug('auth_info')
-        self.logger.debug(showBytes(auth_info))
         self.emptySocketBuffer()
         self.keepAlive(auth_info)
