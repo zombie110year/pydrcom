@@ -1,10 +1,15 @@
+"""Drcom 客户端配置文件相关内容
+
+1. 读取配置文件中的字段
+2. 生成配置文件
+"""
+
 from argparse import SUPPRESS, Action, ArgumentParser
 from os import environ
 from pathlib import Path
-from pkgutil import get_data
 from platform import system
 from sys import exit
-
+import toml
 from .utils import Namespace
 
 if system() == "Windows":
@@ -23,6 +28,53 @@ else:
         ),
         Path("/etc/drcom/drcom.conf"),
     ]
+
+class DrcomConfig:
+    def __init__(self):
+        self.data = {
+            "application": {
+                "logging": 10,              # int
+            },
+            "drcom": {
+                "username": "校园网账号",   # str
+                "password": "校园网密码",   # str
+                "mac": 0x0,                 # int
+                "host_ip": "192.168.0.1",   # str
+                "host_name": "F**K DRCOM",  # str
+                "host_os": "DRCOM F**KER",  # str
+                "dhcp": "0.0.0.0",          # str
+                "dns": "8.8.8.8",           # str
+            },
+            "core": {
+                "CONTROL_CHECK_STATUS": b"",    # bytes
+                "ADAPTER_NUM": b"",             # bytes
+                "IP_DOG": b"",                  # bytes
+                "AUTH_VERSION": b"",            # bytes
+                "KEEP_ALIVE_VERSION": b"",      # bytes
+                "SALT": b"",                    # bytes
+                "ROR_VERSION": b"",             # bytes
+            }
+        }
+
+    def loads(self, string: str):
+        """从 TOML 格式的字符串中加载配置
+        """
+        self.data = toml.loads(string)
+        return self
+
+    def load(self, file: Path):
+        """从 TOML 文件中加载配置
+
+        :param Path file: pathlib.Path 对象，目标 TOML 文件. 字符编码必须是 UTF-8
+        """
+        content = file.read_text("utf-8")
+        return self.loads(content)
+
+    def dumps(self) -> str:
+        return toml.dumps(self.data)
+
+    def dump(self, file: Path):
+        file.write_text(self.dumps(), encoding="utf-8")
 
 
 class SetFilesPathAction(Action):
