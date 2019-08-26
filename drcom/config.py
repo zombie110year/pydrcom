@@ -109,8 +109,7 @@ class GenerateFileAction(Action):
         print("配置文件生成于 {}".format(target_file.absolute()))
         parser.exit()
 
-
-def getCliArgs():
+def getParser():
     parser = ArgumentParser(
         prog="Drcom Python Client",
         description="这是 Drcom 的 Python 客户端, 在命令行启动, 停止运行则按 Ctrl+C"
@@ -129,8 +128,7 @@ def getCliArgs():
         help="在当前目录下生成配置文件模板",
         action=GenerateFileAction
     )
-    arg = parser.parse_args()
-    return arg
+    return parser
 
 
 def getConfigFileContent(paths):
@@ -171,6 +169,6 @@ def configure():
     """启动时调用, 返回解析的配置
     """
 
-    arg = getCliArgs()
+    arg = getParser().parse_args()
     conf = getConfigFileContent(arg.config)
     return conf
