@@ -42,6 +42,7 @@ class DrcomConfig:
                 "logging": 10,              # int
             },
             "drcom": {
+                "server": "认证服务器",     # str
                 "username": "校园网账号",   # str
                 "password": "校园网密码",   # str
                 "mac": 0x0,                 # int
