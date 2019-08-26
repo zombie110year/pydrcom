@@ -59,20 +59,26 @@ class RuntimeCounter:
         self.__counter = 0
 
 
-def md5sum(x):
-    """md5 字节
+def md5sum(x: bytes) -> bytes:
+    """得到输入字节的 md5 值
+
+    >>> md5sum(b'\x03\x01')
+    b' \xf9\xaa|\x18\x9a\xf6\xe6A\xa46i\xbe\xbf\x1cc'
     """
     m = md5()
     m.update(x)
     return m.digest()
 
 
-def dump(n):
-    """将整数转换为对应的十六进制表示,
-    不足一个字节则填零::
+def dump(n: int) -> bytes:
+    """将整数转换为对应的字节
 
-        0x03 -> '03'
-        0x13 -> '13'
+    >>> dump(1)
+    b'\x01'
+    >>> dump(0x16)
+    b'\x16'
+    >>> dump(0xffffffff)
+    b'\xff\xff\xff'
     """
     s = '%x' % n
     if len(s) & 1:  # 奇数
@@ -80,7 +86,12 @@ def dump(n):
     return binascii.unhexlify(bytes(s, 'ascii'))
 
 
-def ror(md5sum, pwd):
+def ror(md5sum: bytes, pwd: str) -> str:
+    """ror 加密
+
+    :param bytes md5sum: md5 检验和 16 字节
+    :param str pwd: Drcom 用户的密码
+    """
     result = []
     for i in range(len(pwd)):
         x = ord(md5sum[i]) ^ ord(pwd[i])
@@ -88,7 +99,9 @@ def ror(md5sum, pwd):
     return ''.join(result)
 
 
-def checksum(bytes_):
+def checksum(bytes_: bytes) -> bytes:
+    """checksum 验证，引用 self.mac
+    """
     resualt = 1234
     for i in [x*4 for x in range(0, -(-len(bytes_)//4))]:
         resualt ^= int(
@@ -100,6 +113,8 @@ def checksum(bytes_):
 
 
 def daemon():
+    """适用于 Linux 系统
+    """
     with open('/var/run/drcom.pid', 'w') as file:
         file.write(str(os.getpid()))
 
@@ -123,7 +138,7 @@ def daemon():
 #         )[20:24]
 #     )
 
-def getIP():
+def getIP() -> str:
     """更通用的获取 IP 地址的方法:
         通过构造一个连接向非本地的 UDP 包, 获取自身 IP 信息
 
@@ -137,7 +152,7 @@ def getIP():
     return ip
 
 
-def getMacAdress():
+def getMacAdress() -> int:
     """获取网卡 mac 地址
 
     :rtype: int
@@ -147,5 +162,10 @@ def getMacAdress():
     return node
 
 
-def showBytes(b):
+def showBytes(b: bytes) -> bytes:
+    """将字节转换成可读的字符串样式
+
+    >>> showBytes(b'\x01')
+    b'01'
+    """
     return binascii.hexlify(b)[2:][:-1]
