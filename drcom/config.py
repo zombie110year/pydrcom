@@ -29,7 +29,13 @@ else:
         Path("/etc/drcom/drcom.conf"),
     ]
 
+
 class DrcomConfig:
+    """DrcomConfig
+
+    DrcomApp 使用的配置文件
+    """
+
     def __init__(self):
         self.data = {
             "application": {
@@ -60,6 +66,9 @@ class DrcomConfig:
         """从 TOML 格式的字符串中加载配置
         """
         self.data = toml.loads(string)
+        for key in self.data["core"]:
+            self.data["core"][key] = (lambda b: bytes(
+                bytearray(b)))(self.data["core"][key])
         return self
 
     def load(self, file: Path):
@@ -109,6 +118,7 @@ class GenerateFileAction(Action):
         print("配置文件生成于 {}".format(target_file.absolute()))
         parser.exit()
 
+
 def getParser():
     parser = ArgumentParser(
         prog="Drcom Python Client",
@@ -131,44 +141,10 @@ def getParser():
     return parser
 
 
-def getConfigFileContent(paths):
-    """传入配置文件路径, 读取其中内容, 以 namespace 的格式返回
-
-    配置文件在读取前为 :class:`pathlib.Path`, 如果传入字符串,
-    则会先转化为 Path 实例.
-
-    :param paths: 配置文件的路径(列表)
-    :type path: list(:class:`pathlib.Path` 或 :class:`str`)
-    """
-    conf = Namespace()
-    for path in paths:
-        if not isinstance(path, Path):
-            path = Path(path)
-
-        file = path
-        if path.exists():
-            script = file.open("rt", encoding="utf-8").read()
-            print(
-                "使用配置文件 {path}".format(
-                    path=str(file.absolute())
-                )
-            )
-            exec(script, {}, conf.__dict__)
-            return conf
-        else:
-            print(
-                "未找到配置文件 {path}".format(
-                    path=str(file.absolute())
-                )
-            )
-    else:
-        raise FileNotFoundError("找不到可用的配置文件")
-
-
 def configure():
     """启动时调用, 返回解析的配置
     """
 
     arg = getParser().parse_args()
-    conf = getConfigFileContent(arg.config)
-    return conf
+    conf = DrcomConfig()
+    return conf.load(arg.config)
