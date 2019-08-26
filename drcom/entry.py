@@ -35,7 +35,3 @@ def main():
         app.run()
     except KeyboardInterrupt:
         app.logout()
-
-
-if __name__ == "__main__":
-    main()
