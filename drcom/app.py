@@ -473,3 +473,34 @@ class DrcomApp:
         else:
             data += b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         return data
+
+    def keepAliveStable(self):
+        """keepAlive 稳定期
+
+        读取属性
+
+        -   srv_num
+        -   tail
+
+        修改属性
+
+        -   srv_num
+        -   tail
+
+        调用函数
+        """
+        # Step 1
+        packet = self.makeKeepAlivePacket(1, False)
+        self.socket.sendto(
+            packet, (self.drcom["server"], self.drcom["server_port"]))
+        data, _ = self.socket.recvfrom(1024)
+        self.srv_num += 1
+        self.tail = data[16:20]
+
+        # Step 2
+        packet = self.makeKeepAlivePacket(3, False)
+        self.socket.sendto(
+            packet, (self.drcom["server"], self.drcom["server_port"]))
+        data, _ = self.socket.recvfrom(1024)
+        self.tail = data[16:20]
+        self.srv_num = (self.srv_num + 1) % 127
