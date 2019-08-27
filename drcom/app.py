@@ -52,6 +52,7 @@ class DrcomApp:
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(
             server=self.drcom["server"],
+            port=self.drcom["server_port"],
             username=self.drcom["username"],
             password=self.drcom["password"],
             mac=self.drcom["mac"],
@@ -107,7 +108,7 @@ class DrcomApp:
         pack = struct.pack("<H", int(rand) % 0xffff)
         self.socket.sendto(
             b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
-            (self.drcom["server"], self.drcom["server_port"])
+            (self.context.server, self.context.port)
         )
         data, address = self.socket.recvfrom(1024)
         if data[:1] != b'\x02':
@@ -132,10 +133,9 @@ class DrcomApp:
         -   :meth:`makePacket`
         """
         self.socket.sendto(self.makeLoginPacket(),
-                           (self.drcom["server"], self.drcom["server_port"])
-                           )
+                           (self.context.server, self.context.port))
         data, address = self.socket.recvfrom(1024)
-        if address == (self.drcom["server"], self.drcom["server_port"]):
+        if address == (self.context.server, self.context.port):
             if data[:1] == b'\x04':
                 self.context.AUTH_INFO = data[23:39]
             else:
@@ -380,7 +380,7 @@ class DrcomApp:
         data += struct.pack("!H", int(time.time()) % 0xffff)
         data += b'\x00\x00\x00\x00'
         self.socket.sendto(
-            data, (self.drcom["server"], self.drcom["server_port"]))
+            data, (self.context.server, self.context.port))
         data, address = self.socket.recvfrom(1024)
         if data[:1] != b'\x07':
             raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
@@ -407,7 +407,7 @@ class DrcomApp:
         # Step 1
         packet = self.makeKeepAlivePacket(1, True)
         self.socket.sendto(
-            packet, (self.drcom["server"], self.drcom["server_port"]))
+            packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if (
             data.startswith(b'\x07\x00\x28\x00') or
@@ -419,7 +419,7 @@ class DrcomApp:
         # Step 2
         packet = self.makeKeepAlivePacket(1, False)
         self.socket.sendto(
-            packet, (self.drcom["server"], self.drcom["server_port"]))
+            packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b'\x07':
             raise KeepAliveException(r"data[:1] != b'\x07'")
@@ -485,7 +485,7 @@ class DrcomApp:
         # Step 1
         packet = self.makeKeepAlivePacket(1, False)
         self.socket.sendto(
-            packet, (self.drcom["server"], self.drcom["server_port"]))
+            packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         self.srv_num += 1
         self.tail = data[16:20]
@@ -493,7 +493,7 @@ class DrcomApp:
         # Step 2
         packet = self.makeKeepAlivePacket(3, False)
         self.socket.sendto(
-            packet, (self.drcom["server"], self.drcom["server_port"]))
+            packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         self.tail = data[16:20]
         self.srv_num = (self.srv_num + 1) % 127
@@ -514,7 +514,7 @@ class DrcomApp:
             )[-6:0]
             data += self.context.AUTH_INFO
             self.socket.sendto(data,
-                               (self.drcom["server"], self.drcom["server_port"]))
+                               (self.context.server, self.context.port))
             data, _ = self.socket.recvfrom(1024)
             if data[:1] == b'\x04':
                 exit(0)

@@ -7,6 +7,7 @@ class DrcomContext:
     ============
 
     :param str server:      Drcom 认证服务器的地址
+    :param int port:        服务端端口
     :param str username:    校园网账号
     :param str password:    校园网密码
     :param int mac:         本机 mac 地址
@@ -26,6 +27,7 @@ class DrcomContext:
 
     def __init__(self,
                  server: str,
+                 port: int,
                  username: str,
                  password: str,
                  mac: int,
@@ -44,6 +46,7 @@ class DrcomContext:
         """初始化上下文
 
         :param str server:      Drcom 认证服务器的地址
+        :param int port:        服务端端口
         :param str username:    校园网账号
         :param str password:    校园网密码
         :param int mac:         本机 mac 地址
@@ -61,6 +64,7 @@ class DrcomContext:
         :param bytes ROR_VERSION:
         """
         self.server = server
+        self.port = port
         self.username = username
         self.password = password
         self.mac = mac
