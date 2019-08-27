@@ -377,14 +377,80 @@ class DrcomApp:
         -   utils.md5sum
         """
         data = b''
-        data += b'\xff' + md5sum(b'\x03\x01' + self.context.SALT + self.context.password.encode())
+        data += b'\xff' + \
+            md5sum(b'\x03\x01' + self.context.SALT +
+                   self.context.password.encode())
         data += b'\x00\x00\x00'
         data += struct.pack("!H", int(time.time()) % 0xffff)
         data += b'\x00\x00\x00\x00'
-        self.socket.sendto(data, (self.drcom["server"], self.drcom["server_port"]))
+        self.socket.sendto(
+            data, (self.drcom["server"], self.drcom["server_port"]))
         try:
             data, address = self.socket.recvfrom(1024)
         except s.timeout:
             raise s.timeout
         if data[:1] != b'\x07':
             raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
+
+    def keepAlive2(self):
+        """保持连接第二阶段
+
+        访问属性
+
+        -   srv_num
+        -   tail
+        -   context.server
+        -   context.server_port
+
+        修改属性
+
+        -   srv_num
+
+        调用函数
+
+        -   :meth:`makeKeepAlivePacket`
+        """
+        packet = self.makeKeepAlivePacket(1, True)
+        self.socket.sendto(
+            packet, (self.drcom["server"], self.drcom["server_port"]))
+        try:
+            data, _ = self.socket.recvfrom(1024)
+        except s.timeout:
+            raise s.timeout
+        if (
+            data.startswith(b'\x07\x00\x28\x00') or
+            data.startswith(b'\x07' + bytes([self.srv_num]) + b'\x28\x00') or
+            data[:1] == b'\x07' and data[2:3] == b'\x10'
+        ):
+            self.srv_num += 1
+
+    def makeKeepAlivePacket(self, type_, first):
+        """构建 keepalive 包
+
+        读取属性
+
+        self.srv_num
+        self.tail
+
+        修改属性
+
+        调用函数
+        """
+        data = b''
+        data += b'\x07' + bytes([self.srv_num]) + \
+            b'\x28\x00\x0b' + bytes([type_])
+        if first:
+            data += b'\x0f\x27'
+        else:
+            data += self.context.KEEP_ALIVE_VERSION
+        data += b'\x2f\x12\x00\x00\x00\x00\x00\x00'
+        data += self.tail
+        data += b'\x00\x00\x00\x00'
+        if type_ == 3:
+            data += b'\x00\x00\x00\x00'
+            data += b''.join([bytes([int(i)])
+                              for i in self.context.host_ip.split('.')])
+            data += b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        else:
+            data += b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return data
