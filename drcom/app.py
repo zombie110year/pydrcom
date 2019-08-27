@@ -7,8 +7,8 @@ from sys import exit
 from .config import DrcomConfig
 from .context import DrcomContext
 from .exceptions import *
-from .utils import *
 from .log import LogWriter
+from .utils import *
 
 
 class DrcomApp:
@@ -146,7 +146,8 @@ class DrcomApp:
         self.logger.info("login recv", data)
         if data[:1] == b'\x04':
             self.context.AUTH_INFO = data[23:39]
-            self.logger.debug("AUTH_INFO set in sendLogin", self.context.AUTH_INFO)
+            self.logger.debug("AUTH_INFO set in sendLogin",
+                              self.context.AUTH_INFO)
         else:
             self.logger.warn("login fail, != 04", data)
             raise LoginException(r"data[:1] != b'\x04'")
@@ -430,7 +431,8 @@ class DrcomApp:
             data[:1] == b'\x07' and data[2:3] == b'\x10'
         ):
             self.srv_num += 1
-            self.logger.debug("srv_num add, keepAlive2 01", bytes([self.srv_num]))
+            self.logger.debug("srv_num add, keepAlive2 01",
+                              bytes([self.srv_num]))
 
         # Step 2
         packet = self.makeKeepAlivePacket(1, False)
@@ -445,7 +447,8 @@ class DrcomApp:
         else:
             self.srv_num += 1
             self.tail = data[16:20]
-            self.logger.debug("srv_num add keepAlive2 02", bytes([self.srv_num]))
+            self.logger.debug("srv_num add keepAlive2 02",
+                              bytes([self.srv_num]))
             self.logger.debug("tail mod in keepAlive2 02", self.tail)
 
         # Step 3
@@ -460,7 +463,8 @@ class DrcomApp:
         else:
             self.srv_num += 1
             self.tail = data[16:20]
-            self.logger.debug("srv_num add keepAlive2 03", bytes([self.srv_num]))
+            self.logger.debug("srv_num add keepAlive2 03",
+                              bytes([self.srv_num]))
             self.logger.debug("tail mod in keepAlive2 03", self.tail)
 
     def makeKeepAlivePacket(self, type_, first):
@@ -518,7 +522,8 @@ class DrcomApp:
         self.logger.info("keepAliveStable 01 recv", data)
         self.srv_num += 1
         self.tail = data[16:20]
-        self.logger.debug("srv_num add keepAliveStable 01", bytes([self.srv_num]))
+        self.logger.debug("srv_num add keepAliveStable 01",
+                          bytes([self.srv_num]))
         self.logger.debug("tail mod in keepAliveStable 01", self.tail)
 
         # Step 2
@@ -530,7 +535,8 @@ class DrcomApp:
         self.logger.info("keepAliveStable 02 recv", data)
         self.srv_num = (self.srv_num + 1) % 127
         self.tail = data[16:20]
-        self.logger.debug("srv_num reset keepAliveStable 02", bytes([self.srv_num]))
+        self.logger.debug("srv_num reset keepAliveStable 02",
+                          bytes([self.srv_num]))
         self.logger.debug("tail mod in keepAliveStable 02", self.tail)
 
     def logout(self):
