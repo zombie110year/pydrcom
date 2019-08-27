@@ -14,6 +14,66 @@ LEVEL_WARN = 30
 LEVEL_ERROR = 40
 
 
+class Message:
+    COLORS = {
+        LEVEL_VERBOSE: 0,
+        LEVEL_DEBUG: 2,
+        LEVEL_INFO: 0,
+        LEVEL_WARN: 3,
+        LEVEL_ERROR: 1,
+    }
+
+    CHARS = {
+        LEVEL_VERBOSE: "V",
+        LEVEL_DEBUG: "D",
+        LEVEL_INFO: "I",
+        LEVEL_WARN: "W",
+        LEVEL_ERROR: "E",
+    }
+
+    def __init__(self, time: float, level: int, msg: str, data: bytes):
+        self.time = time
+        self.level = level
+        self.msg = msg
+        self.data = data
+
+    @property
+    def sql(self) -> str:
+        return f"""INSERT INTO {TABLE_NAME} (time, level, msg, data)
+        VALUES (?, ?, ?, ?);"""
+
+    def store(self, cursor: s.Cursor):
+        cursor.execute(self.sql, (self.time, self.level, self.msg, self.data))
+
+    def terminal(self, **kw):
+        """格式化字符串, 输出至终端的格式
+
+        :param bool data: 是否显示原始字节
+        :param bool color: 是否返回 ASCII 着色
+        """
+        string = "{lco}{time}:: {msg}"
+        cmap = {
+            "msg": self.msg,
+            "time": strftime("%Y-%m-%d %H:%M:%S", localtime(self.time)),
+            "lco": self.CHARS[self.level],
+        }
+        if kw.get("data", False):
+            string += "{dco}{data}{co0}"
+            cmap.update({
+                "dco": "",
+                "data": repr(self.data),
+                "co0": "",
+            })
+        if kw.get("color", False):
+            cmap.update({
+                "lco": f"\x1b[3{self.COLORS[self.level]};7m{self.CHARS[self.level]}\x1b[0m",
+                "dco": f"\x1b[32m",
+                "co0": "\x1b[0m"
+            })
+
+        return string.format(**cmap)
+
+
 class Logger:
     max_keep = float(604800)  # 7 天
 
@@ -114,63 +174,3 @@ class LogReader(Logger):
             f"SELECT time, level, msg, data FROM {TABLE_NAME} ORDER BY time DESC WHERE level>={self.level};")
         for time, level, msg, data in result:
             yield Message(time, level, msg, data)
-
-
-class Message:
-    COLORS = {
-        LEVEL_VERBOSE: 0,
-        LEVEL_DEBUG: 2,
-        LEVEL_INFO: 0,
-        LEVEL_WARN: 3,
-        LEVEL_ERROR: 1,
-    }
-
-    CHARS = {
-        LEVEL_VERBOSE: "V",
-        LEVEL_DEBUG: "D",
-        LEVEL_INFO: "I",
-        LEVEL_WARN: "W",
-        LEVEL_ERROR: "E",
-    }
-
-    def __init__(self, time: float, level: int, msg: str, data: bytes):
-        self.time = time
-        self.level = level
-        self.msg = msg
-        self.data = data
-
-    @property
-    def sql(self) -> str:
-        return f"""INSERT INTO {TABLE_NAME} (time, level, msg, data)
-        VALUES (?, ?, ?, ?);"""
-
-    def store(self, cursor: s.Cursor):
-        cursor.execute(self.sql, (self.time, self.level, self.msg, self.data))
-
-    def format(self, **kw):
-        """格式化字符串
-
-        :param bool data: 是否显示原始字节
-        :param bool color: 是否返回 ASCII 着色
-        """
-        string = "{lco}{time}:: {msg}"
-        cmap = {
-            "msg": self.msg,
-            "time": strftime("%Y-%m-%d %H:%M:%S", localtime(self.time)),
-            "lco": self.CHARS[self.level],
-        }
-        if kw.get("data", False):
-            string += "{dco}{data}{co0}"
-            cmap.update({
-                "dco": "",
-                "data": repr(self.data),
-                "co0": "",
-            })
-        if kw.get("color", False):
-            cmap.update({
-                "lco": f"\x1b[3{self.COLORS[self.level]};7m{self.CHARS[self.level]}\x1b[0m",
-                "dco": f"\x1b[32m",
-                "co0": "\x1b[0m"
-            })
-
-        return string.format(**cmap)
