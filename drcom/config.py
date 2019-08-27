@@ -117,7 +117,9 @@ def getParser() -> ArgumentParser:
         prog="Drcom Python Client",
         description="这是 Drcom 的 Python 客户端, 在命令行启动, 停止运行则按 Ctrl+C"
     )
-    parser.add_argument(
+    cmd = parser.add_subparsers(dest="subcmd")
+    start = cmd.add_parser("start", description="启动 drcom")
+    start.add_argument(
         "-c", "--config",
         dest="config",
         help="指定配置文件 优先级 ./drcom.conf > ~/.config/drcom/drcom.conf > /etc/drcom/drcon.conf",
@@ -126,11 +128,11 @@ def getParser() -> ArgumentParser:
         default=DEFAULT_CONFIG_FILES,
         action=SetFilesPathAction,
     )
-    parser.add_argument(
-        "--generate-config",
-        help="生成配置文件",
-        action=GenerateFileAction
-    )
+    stop = cmd.add_parser("stop", description="停止 drcom")
+    log = cmd.add_parser("log", description="显示日志")
+    log.add_argument("LEVEL", help="指定浏览的最低日志等级", type=int)
+    analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
+    analyse.add_argument("FILE", help="要解析的抓包文件")
     return parser
 
 

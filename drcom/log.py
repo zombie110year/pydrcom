@@ -106,12 +106,12 @@ class LogReader(Logger):
             f"""{strftime("%Y-%m-%d", localtime(now))}.log"""
         self.session = s.connect(str(self.database.absolute()))
 
-    def iter(self):
+    def iter(self) -> Message:
         """按时间顺序从晚到早
         """
         c = self.session.cursor()
         result = c.execute(
-            f"SELECT time, level, msg, data FROM {TABLE_NAME} ORDER BY time DESC;")
+            f"SELECT time, level, msg, data FROM {TABLE_NAME} ORDER BY time DESC WHERE level>={self.level};")
         for time, level, msg, data in result:
             yield Message(time, level, msg, data)
 
