@@ -110,7 +110,7 @@ class DrcomApp:
             b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
             (self.context.server, self.context.port)
         )
-        data, address = self.socket.recvfrom(1024)
+        data, _ = self.socket.recvfrom(1024)
         if data[:1] != b'\x02':
             raise ChallengeException()
 
@@ -134,12 +134,11 @@ class DrcomApp:
         """
         self.socket.sendto(self.makeLoginPacket(),
                            (self.context.server, self.context.port))
-        data, address = self.socket.recvfrom(1024)
-        if address == (self.context.server, self.context.port):
-            if data[:1] == b'\x04':
-                self.context.AUTH_INFO = data[23:39]
-            else:
-                raise LoginException(r"data[:1] != b'\x04'")
+        data, _ = self.socket.recvfrom(1024)
+        if data[:1] == b'\x04':
+            self.context.AUTH_INFO = data[23:39]
+        else:
+            raise LoginException(r"data[:1] != b'\x04'")
 
     def makeLoginPacket(self) -> bytes:
         """构建 login 包
@@ -324,7 +323,7 @@ class DrcomApp:
     def emptySocketBuffer(self):
         while True:
             try:
-                data, address = self.socket.recvfrom(1024)
+                self.socket.recvfrom(1024)
             except s.timeout:
                 break
 
@@ -381,7 +380,7 @@ class DrcomApp:
         data += b'\x00\x00\x00\x00'
         self.socket.sendto(
             data, (self.context.server, self.context.port))
-        data, address = self.socket.recvfrom(1024)
+        data, _ = self.socket.recvfrom(1024)
         if data[:1] != b'\x07':
             raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
 
