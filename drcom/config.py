@@ -53,6 +53,7 @@ class DrcomConfig:
                 "dns": "8.8.8.8",           # str
             },
             "core": {
+                "BIND_IP": "0.0.0.0",   # 客户端必须监听网卡上所有接口
                 "SERVER_PORT": 61440,   # 认证服务器端口
                 "CONTROL_CHECK_STATUS": b"",    # bytes
                 "ADAPTER_NUM": b"",             # bytes
