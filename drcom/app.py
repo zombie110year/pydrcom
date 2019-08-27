@@ -506,7 +506,7 @@ class DrcomApp:
             data += bytes([len(self.context.username) + 20])
             data += md5sum(b'\x03\x01' + self.context.SALT +
                            self.context.password.encode())
-            data += (self.username.encode() + 36 * b'\x00')[:36]
+            data += (self.context.username.encode() + 36 * b'\x00')[:36]
             data += self.context.CONTROL_CHECK_STATUS
             data += self.context.ADAPTER_NUM
             data += hexdump(
