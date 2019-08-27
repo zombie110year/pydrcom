@@ -87,6 +87,7 @@ class DrcomContext:
         self.AUTH_VERSION = AUTH_VERSION
         self.SALT = SALT
         self.ROR_VERSION = ROR_VERSION
+        self.AUTH_INFO  = None # 在 login 阶段初始化
 
 class Drcom:
     """

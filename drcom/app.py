@@ -2,7 +2,11 @@ from .config import DrcomConfig
 from .context import DrcomContext
 import socket as s
 
-from .utils import BindException
+from .utils import ChallengeException
+import time
+import random
+import struct
+
 
 class DrcomApp:
     """Drcom 应用程序
@@ -62,3 +66,45 @@ class DrcomApp:
             ROR_VERSION=self.core["ROR_VERSION"],
         )
         return dc
+
+    def login(self):
+        """登录
+
+        调用函数
+
+        -   :meth:`challenge`
+        -   :meth:`sendLogin`
+        """
+        while True:
+            self.challenge()
+            self.sendLogin()
+
+    def challenge(self):
+        """尝试连接
+
+        读取属性
+
+        -   drcom.server
+        -   drcom.server_port
+
+        修改属性
+
+        -   context.SALT
+        """
+        rand = time.time() + random.randint(0xf, 0xff)
+        while True:
+            pack = struct.pack("<H", int(rand) % 0xffff)
+            self.socket.sendto(
+                b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
+                (self.drcom["server"], self.drcom["server_port"])
+            )
+            try:
+                data, address = self.socket.recvfrom(1024)
+            except s.timeout:
+                continue
+            if address == (self.drcom["server"], self.drcom["server_port"]):
+                break
+            if data[:1] != b'\x02':
+                raise ChallengeException()
+
+        self.context.SALT = data[4:8]
