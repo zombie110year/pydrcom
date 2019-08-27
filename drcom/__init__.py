@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from .analyse import analysePcapng
 from .app import DrcomApp
 from .config import DrcomConfig, getParser
 from .log import LogReader
@@ -21,3 +24,8 @@ def main():
             print(m.format())
             if input() == "q":
                 break
+    elif args.subcmd == "analyse":
+        path = Path(args.FILE)
+        conf = analysePcapng(path)
+        conf.dump(Path("drcom.toml"))
+        print("file saved at ./drcom.toml")

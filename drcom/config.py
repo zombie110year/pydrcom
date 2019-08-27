@@ -19,6 +19,7 @@ DEFAULT_CONFIG_FILES = [
     Path("/etc/drcom/drcom.toml")   # 为 Linux Systemd 准备
 ]
 
+
 class DrcomConfig:
     """DrcomConfig
 
@@ -81,6 +82,7 @@ class DrcomConfig:
     def __getitem__(self, key):
         return self.data[key]
 
+
 class SetFilesPathAction(Action):
     """设置 dest 为 Path 对象
     """
@@ -88,28 +90,6 @@ class SetFilesPathAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         path = (Path(values).absolute(), )  # 需要一个元组
         setattr(namespace, self.dest, path)
-
-
-class GenerateFileAction(Action):
-    """生成文件后退出
-    """
-
-    def __init__(self,
-                 option_strings,
-                 dest=SUPPRESS,
-                 default=SUPPRESS,
-                 help=None):
-        super(GenerateFileAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            default=default,
-            nargs=0,
-            help=help)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        conf = DrcomConfig()
-        print(conf.dumps())
-        parser.exit()
 
 
 def getParser() -> ArgumentParser:
