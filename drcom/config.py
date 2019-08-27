@@ -110,7 +110,7 @@ def getParser() -> ArgumentParser:
     )
     stop = cmd.add_parser("stop", description="停止 drcom")
     log = cmd.add_parser("log", description="显示日志")
-    log.add_argument("LEVEL", help="指定浏览的最低日志等级", type=int)
+    log.add_argument("LEVEL", help="指定浏览的最低日志等级", type=int, default=10, nargs="?")
     analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
     analyse.add_argument("FILE", help="要解析的抓包文件")
     return parser
