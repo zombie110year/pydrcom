@@ -332,3 +332,24 @@ class DrcomApp:
                 data, address = self.socket.recvfrom(1024)
             except s.timeout:
                 break
+
+    def keepAlive(self):
+        """保持连接
+
+        修改属性
+
+        -   self.srv_num    新建
+        -   self.tail       新建
+
+        调用函数
+
+        -   :meth:`keepAlive1`
+        -   :meth:`keepAlive2`
+        """
+
+        self.srv_num = 0
+        self.tail = b'\x00\x00\x00\x00'
+        while True:
+            self.keepAlive1()
+            self.keepAlive2()
+            time.sleep(self.drcom["keep_alive_interval"])
