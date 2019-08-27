@@ -11,6 +11,8 @@ from platform import system
 from sys import exit
 import toml
 
+from .utils import getIP, getMacAdress
+
 DEFAULT_CONFIG_FILES = [
     Path("drcom.toml"),
     Path.home() / ".config/drcom/drcom.toml",
@@ -35,8 +37,8 @@ class DrcomConfig:
                 "server_port": 61440,       # 认证服务器端口
                 "username": "校园网账号",   # str
                 "password": "校园网密码",   # str
-                "mac": 0x0,                 # int
-                "host_ip": "192.168.0.1",   # str
+                "mac": getMacAdress(),      # int
+                "host_ip": getIP(),         # str
                 "host_name": "F**K DRCOM",  # str
                 "host_os": "DRCOM F**KER",  # str
                 "dhcp": "0.0.0.0",          # str
