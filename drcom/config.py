@@ -11,23 +11,11 @@ from platform import system
 from sys import exit
 import toml
 
-if system() == "Windows":
-    DEFAULT_CONFIG_FILES = [
-        Path("./drcom.conf"),
-        Path(
-            "{}/.config/drcom/drcom.conf".format(environ["USERPROFILE"])
-        ),
-        Path("/etc/drcom/drcom.conf"),
-    ]
-else:
-    DEFAULT_CONFIG_FILES = [
-        Path("./drcom.conf"),
-        Path(
-            "{}/.config/drcom/drcom.conf".format(environ["HOME"])
-        ),
-        Path("/etc/drcom/drcom.conf"),
-    ]
-
+DEFAULT_CONFIG_FILES = [
+    Path("drcom.toml"),
+    Path.home() / ".config/drcom/drcom.toml",
+    Path("/etc/drcom/drcom.toml")   # 为 Linux Systemd 准备
+]
 
 class DrcomConfig:
     """DrcomConfig
