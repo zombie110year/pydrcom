@@ -10,7 +10,6 @@ from pathlib import Path
 from platform import system
 from sys import exit
 import toml
-from .utils import Namespace
 
 if system() == "Windows":
     DEFAULT_CONFIG_FILES = [

@@ -6,49 +6,6 @@ import time
 from hashlib import md5
 
 
-class Namespace:
-    pass
-    
-
-class RuntimeCounter:
-    """记录运行次数, 若达到限制则终止
-
-    :param int max: 最大运行次数
-
-    .. method:: clear()
-
-        清空计数器
-    """
-
-    def __init__(self, max=5):
-        self.__max = max
-        self.__counter = 0
-
-    def __repr__(self):
-        return "RuntimeCounter<{}/{}>".format(
-            self.__counter,
-            self.__max
-        )
-
-    def __call__(self, action=None, args=(), kwargs={}):
-        """当 RuntimeCounter 的计数超过限度时,
-        调用 action, args, 和 kwargs 是传给 action 的参数.
-
-        :param action: 一个函数
-        :param list args: 传递给 action 的参数列表
-        :param dict kwargs: 传递给 action 的命名参数列表
-        """
-        if self.__counter >= self.__max:
-            if callable(action):
-                action(*args, **kwargs)
-            sys.exit(-1)
-        else:
-            self.__counter += 1
-
-    def clear(self):
-        self.__counter = 0
-
-
 def md5sum(x: bytes) -> bytes:
     """得到输入字节的 md5 值
 
