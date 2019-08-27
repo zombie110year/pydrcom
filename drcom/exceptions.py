@@ -16,3 +16,8 @@ class LoginException(Exception):
 class BindPortException(OSError):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class KeepAliveException(ValueError):
+    def __init__(self, msg):
+        super().__init__(msg)

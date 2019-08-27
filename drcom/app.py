@@ -350,6 +350,37 @@ class DrcomApp:
         self.srv_num = 0
         self.tail = b'\x00\x00\x00\x00'
         while True:
-            self.keepAlive1()
+            try:
+                self.keepAlive1()
+            except KeepAliveException:
+                continue
             self.keepAlive2()
             time.sleep(self.drcom["keep_alive_interval"])
+
+    def keepAlive1(self):
+        """保持连接第一阶段
+
+        读取属性
+
+        -   context.AUTH_INFO
+        -   context.SALT
+        -   context.password
+        -   drcom.server
+        -   drcom.server_port
+
+        调用函数
+
+        -   utils.md5sum
+        """
+        data = b''
+        data += b'\xff' + md5sum(b'\x03\x01' + self.context.SALT + self.context.password.encode())
+        data += b'\x00\x00\x00'
+        data += struct.pack("!H", int(time.time()) % 0xffff)
+        data += b'\x00\x00\x00\x00'
+        self.socket.sendto(data, (self.drcom["server"], self.drcom["server_port"]))
+        try:
+            data, address = self.socket.recvfrom(1024)
+        except s.timeout:
+            raise s.timeout
+        if data[:1] != b'\x07':
+            raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
