@@ -428,6 +428,7 @@ class DrcomApp:
 
         # Step 3
         packet = self.makeKeepAlivePacket(3, False)
+        self.socket.sendto(packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b'\x07':
             raise KeepAliveException(r"data[:1] != b'\x07'")
