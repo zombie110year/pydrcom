@@ -1,6 +1,8 @@
 from .config import DrcomConfig
 from .context import DrcomContext
+import socket as s
 
+from .utils import BindException
 
 class DrcomApp:
     """Drcom 应用程序
@@ -21,6 +23,19 @@ class DrcomApp:
         self.drcom = config["drcom"]
         self.core = config["core"]
 
+        self.context = self.initContext()
+        # IPv4, UDP
+        self.socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
+        self.socket.settimeout(10)
+        for i in range(60000, 0x10000):
+            try:
+                self.socket.bind((self.application["bind_ip"], i))
+                break
+            except OSError:
+                # errno 98 address already in use
+                continue
+        else:
+            raise Exception("从 60000 到 65536 间端口已耗尽")
 
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(

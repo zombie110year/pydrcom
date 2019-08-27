@@ -40,9 +40,12 @@ class DrcomConfig:
         self.data = {
             "application": {
                 "logging": 10,              # int
+                "bind_ip": "0.0.0.0",       # 客户端必须监听网卡上所有接口
             },
             "drcom": {
+                "keep_alive_interval": 15,  # int
                 "server": "认证服务器",     # str
+                "server_port": 61440,       # 认证服务器端口
                 "username": "校园网账号",   # str
                 "password": "校园网密码",   # str
                 "mac": 0x0,                 # int
@@ -53,8 +56,6 @@ class DrcomConfig:
                 "dns": "8.8.8.8",           # str
             },
             "core": {
-                "BIND_IP": "0.0.0.0",   # 客户端必须监听网卡上所有接口
-                "SERVER_PORT": 61440,   # 认证服务器端口
                 "CONTROL_CHECK_STATUS": b"",    # bytes
                 "ADAPTER_NUM": b"",             # bytes
                 "IP_DOG": b"",                  # bytes
