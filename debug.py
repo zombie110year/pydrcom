@@ -1,8 +1,7 @@
 #! /usr/bin/env python3
 # coding: utf-8
 
-from drcom.entry import main, _main
+from drcom import main
 
-#app = _main(("debug/drcom.conf",))
-#app.run()
-main()
+if __name__ == "__main__":
+    main()
