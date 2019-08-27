@@ -2,7 +2,7 @@
 
 PyDrcom 是一个使用 Python3 的 Drcom 第三方客户端. 适用于 **无线连接**.
 
-参考了 [drcom-generic](https://github.com/drcoms/drcom-generic/)
+参考了 [drcom-generic](https://github.com/drcoms/drcom-generic/) 中的脚本。
 
 # 安装
 
@@ -17,30 +17,23 @@ python setup.py install --user
 编辑配置文件后, 运行程序.
 
 ```sh
-drcom -h # 查看使用方法
-drcom # 直接运行
+# 查看使用方法
+drcom --help
+# 直接运行
+drcom start
+# 查看日志
+drcom log
+# 由 WireShark 抓包生成配置文件
+drcom analyse example.pcapng
 ```
 
 ## 配置条目
 
-使用以下命令生成配置文件模板, 产生的文件在当前工作目录下.
+使用以下命令从 WireShark 抓包生成配置文件模板, 保存在当前目录下的 `drcom.toml` 中。
 
 ```sh
-drcom --generate-config
+drcom analyse example.pcapng
 ```
-
-# 待办
-
-- [x] 完成 wire 模块
-- [ ] 完成 lan 模块
-- [ ] config 模块
-    - [x] 生成配置文件模板
-    - [ ] 自动检测 Drcom 认证服务器地址
-- [ ] 测试 Windows
-    - [x] Windows 10
-- [ ] 测试 Linux
-    - [x] Ubuntu 16.04 LTS amd64
-    - [x] Deepin 15.9
 
 # 开源协议
 
