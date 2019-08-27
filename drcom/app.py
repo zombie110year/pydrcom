@@ -37,6 +37,12 @@ class DrcomApp:
         else:
             raise Exception("从 60000 到 65536 间端口已耗尽")
 
+    def run(self):
+        """开始运行"""
+        self.login()
+        self.emptySocketBuffer()
+        self.keepAlive()
+
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(
             server=self.drcom["server"],
