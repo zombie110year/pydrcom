@@ -112,7 +112,7 @@ class DrcomApp:
         )
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b'\x02':
-            raise ChallengeException()
+            raise ChallengeException(r"data[:1] != b'\x02'")
 
         self.context.SALT = data[4:8]
 

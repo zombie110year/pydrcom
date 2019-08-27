@@ -3,14 +3,13 @@ class AuthException(ValueError):
         super().__init__(msg)
 
 
-class ChallengeException(Exception):
-    def __init__(self):
-        pass
-
-
-class LoginException(Exception):
+class ChallengeException(ValueError):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class LoginException(AuthException):
+    pass
 
 
 class BindPortException(OSError):
