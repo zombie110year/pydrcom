@@ -2,11 +2,10 @@ from .config import DrcomConfig
 from .context import DrcomContext
 import socket as s
 
-from .utils import ChallengeException
 import time
 import random
 import struct
-
+from .exceptions import *
 
 class DrcomApp:
     """Drcom 应用程序
@@ -39,7 +38,7 @@ class DrcomApp:
                 # errno 98 address already in use
                 continue
         else:
-            raise Exception("从 60000 到 65536 间端口已耗尽")
+            raise BindPortException("从 60000 到 65536 间端口已耗尽")
 
     def run(self):
         """开始运行"""
@@ -77,7 +76,14 @@ class DrcomApp:
         """
         while True:
             self.challenge()
-            self.sendLogin()
+            try:
+                self.sendLogin()
+            except s.timeout:
+                continue
+            except LoginException:
+                continue
+            finally:
+                break
 
     def challenge(self):
         """尝试连接
@@ -108,3 +114,32 @@ class DrcomApp:
                 raise ChallengeException()
 
         self.context.SALT = data[4:8]
+
+    def sendLogin(self):
+        """发送登录数据
+
+        读取属性
+
+        -   drcom.server
+        -   drcom.server_port
+
+        修改属性
+
+        -   context.AUTH_INFO
+
+        调用函数
+
+        -   :meth:`makePacket`
+        """
+        self.socket.sendto(self.makePacket(),
+            (self.drcom["server"], self.drcom["server_port"])
+        )
+        try:
+            data, address = self.socket.recvfrom(1024)
+        except s.timeout:
+            raise s.timeout
+        if address == (self.drcom["server"], self.drcom["server_port"]):
+            if data[:1] == b'\x04':
+                self.context.AUTH_INFO = data[23:39]
+            else:
+                raise LoginException(r"data[:1] != b'\x04'")
