@@ -7,6 +7,7 @@ import random
 import struct
 from .exceptions import *
 from .utils import *
+from sys import exit
 
 
 class DrcomApp:
@@ -504,3 +505,24 @@ class DrcomApp:
         data, _ = self.socket.recvfrom(1024)
         self.tail = data[16:20]
         self.srv_num = (self.srv_num + 1) % 127
+
+    def logout(self):
+        self.challenge()
+        data = b''
+        if self.context.SALT:
+            data += b'\x06\x01\x00'
+            data += bytes([len(self.context.username) + 20])
+            data += md5sum(b'\x03\x01' + self.context.SALT +
+                           self.context.password.encode())
+            data += (self.username.encode() + 36 * b'\x00')[:36]
+            data += self.context.CONTROL_CHECK_STATUS
+            data += self.context.ADAPTER_NUM
+            data += dump(
+                int(binascii.hexlify(data[4:10]), 16) ^ self.context.mac
+            )[-6:0]
+            data += self.context.AUTH_INFO
+            self.socket.sendto(data,
+                               (self.drcom["server"], self.drcom["server_port"]))
+            data, _ = self.socket.recvfrom(1024)
+            if data[:1] == b'\x04':
+                exit(0)
