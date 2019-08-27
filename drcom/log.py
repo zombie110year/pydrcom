@@ -7,14 +7,18 @@ from time import localtime, mktime, strftime, strptime, time
 import json
 
 TABLE_NAME = "log"
-LEVEL_VERBOSE = 10
+LEVEL_VERBOSE = 0
 LEVEL_DEBUG = 10
 LEVEL_INFO = 20
 LEVEL_WARN = 30
 LEVEL_ERROR = 40
 
 
-class LogWriter:
+class Logger:
+    max_keep = float(604800)  # 7 天
+
+
+class LogWriter(Logger):
     """SQL Logger
 
     将日志记录在 sqlite3 数据库中。文件存储为 [temp]/drcom/log/*.log。
@@ -41,7 +45,6 @@ class LogWriter:
         warn,30
         error,40
     """
-    max_keep = float(604800)  # 7 天
 
     def __init__(self, level=LEVEL_DEBUG):
         self.database = Path
@@ -90,11 +93,46 @@ class LogWriter:
         self.record(msg, data, LEVEL_ERROR)
 
 
-class LogReader:
-    pass
+class LogReader(Logger):
+    def __init__(self, level=LEVEL_DEBUG):
+        self.database = Path
+        self.session = s.Connection
+        self.level = level
+
+        # 每天都创建一个新的数据库
+        tempdir = Path(gettempdir()) / "drcom" / "log"
+        now = time()
+        self.database = tempdir / \
+            f"""{strftime("%Y-%m-%d", localtime(now))}.log"""
+        self.session = s.connect(str(self.database.absolute()))
+
+    def iter(self):
+        """按时间顺序从晚到早
+        """
+        c = self.session.cursor()
+        result = c.execute(
+            f"SELECT time, level, msg, data FROM {TABLE_NAME} ORDER BY time DESC;")
+        for time, level, msg, data in result:
+            yield Message(time, level, msg, data)
 
 
 class Message:
+    COLORS = {
+        LEVEL_VERBOSE: 0,
+        LEVEL_DEBUG: 2,
+        LEVEL_INFO: 0,
+        LEVEL_WARN: 3,
+        LEVEL_ERROR: 1,
+    }
+
+    CHARS = {
+        LEVEL_VERBOSE: "V",
+        LEVEL_DEBUG: "D",
+        LEVEL_INFO: "I",
+        LEVEL_WARN: "W",
+        LEVEL_ERROR: "E",
+    }
+
     def __init__(self, time: float, level: int, msg: str, data: bytes):
         self.time = time
         self.level = level
@@ -108,3 +146,31 @@ class Message:
 
     def store(self, cursor: s.Cursor):
         cursor.execute(self.sql, (self.time, self.level, self.msg, self.data))
+
+    def format(self, **kw):
+        """格式化字符串
+
+        :param bool data: 是否显示原始字节
+        :param bool color: 是否返回 ASCII 着色
+        """
+        string = "{lco}{time}:: {msg}"
+        cmap = {
+            "msg": self.msg,
+            "time": strftime("%Y-%m-%d %H:%M:%S", localtime(self.time)),
+            "lco": self.CHARS[self.level],
+        }
+        if kw.get("data", False):
+            string += "{dco}{data}{co0}"
+            cmap.update({
+                "dco": "",
+                "data": repr(self.data),
+                "co0": "",
+            })
+        if kw.get("color", False):
+            cmap.update({
+                "lco": f"\x1b[3{self.COLORS[self.level]};7m{self.CHARS[self.level]}\x1b[0m",
+                "dco": f"\x1b[32m",
+                "co0": "\x1b[0m"
+            })
+
+        return string.format(**cmap)
