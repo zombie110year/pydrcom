@@ -116,9 +116,7 @@ class GenerateFileAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         conf = DrcomConfig()
-        target_file = Path("./drcom.conf")
-        conf.dump(target_file)
-        print("配置文件生成于 {}".format(target_file.absolute()))
+        print(conf.dumps())
         parser.exit()
 
 
@@ -138,7 +136,7 @@ def getParser() -> ArgumentParser:
     )
     parser.add_argument(
         "--generate-config",
-        help="在当前目录下生成配置文件模板",
+        help="生成配置文件",
         action=GenerateFileAction
     )
     return parser
