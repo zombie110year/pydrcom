@@ -116,6 +116,9 @@ class LogWriter(Logger):
         now = time()
         self.database = tempdir / \
             f"""{strftime("%Y-%m-%d", localtime(now))}.log"""
+        if not self.database.parent.exists():
+            self.database.parent.mkdir(parents=True)
+        self.database.touch()
         self.session = s.connect(str(self.database.absolute()))
         c = self.session.cursor()
         table_exists = ('table', 'log') in c.execute(
@@ -126,7 +129,7 @@ class LogWriter(Logger):
             self.session.commit()
         # 检查旧数据库, 并清除 7 天前的数据库
         for i in tempdir.glob("*.log"):
-            that = mktime(strptime("%Y-%m-%d", i.stem))
+            that = mktime(strptime(i.stem, "%Y-%m-%d"))
             if now - that > self.max_keep:
                 remove(str(i.absolute()))
 
@@ -171,6 +174,9 @@ class LogReader(Logger):
         """
         c = self.session.cursor()
         result = c.execute(
-            f"SELECT time, level, msg, data FROM {TABLE_NAME} ORDER BY time DESC WHERE level>={self.level};")
+            f"""SELECT time, level, msg, data FROM (
+                    SELECT time, level, msg, data FROM {TABLE_NAME}
+                    WHERE level>={self.level}
+            ) ORDER BY time DESC;""")
         for time, level, msg, data in result:
             yield Message(time, level, msg, data)

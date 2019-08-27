@@ -14,6 +14,8 @@ def main():
             if i.exists():
                 file = i
                 break
+        else:
+            raise FileNotFoundError("找不到可用的配置文件")
         conf = DrcomConfig()
         conf.load(file)
         app = DrcomApp(conf)
@@ -21,7 +23,7 @@ def main():
     elif args.subcmd == "log":
         reader = LogReader(args.LEVEL)
         for m in reader.iter():
-            print(m.format())
+            print(m.terminal(color=True, data=True), end="")
             if input() == "q":
                 break
     elif args.subcmd == "analyse":
