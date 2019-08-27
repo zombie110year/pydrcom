@@ -136,4 +136,8 @@ def configure() -> DrcomConfig:
 
     arg = getParser().parse_args()
     conf = DrcomConfig()
-    return conf.load(arg.config)
+    for i in arg.config:
+        if i.exists():
+            file = i
+            break
+    return conf.load(file)
