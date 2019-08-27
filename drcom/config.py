@@ -122,7 +122,7 @@ class GenerateFileAction(Action):
         parser.exit()
 
 
-def getParser():
+def getParser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="Drcom Python Client",
         description="这是 Drcom 的 Python 客户端, 在命令行启动, 停止运行则按 Ctrl+C"
@@ -144,7 +144,7 @@ def getParser():
     return parser
 
 
-def configure():
+def configure() -> DrcomConfig:
     """启动时调用, 返回解析的配置
     """
 

@@ -13,7 +13,7 @@ setup(
     packages=['drcom'],
     entry_points={
         "console_scripts": [
-            "drcom = drcom.entry:main"
+            "drcom = drcom.__init__:main"
         ]
     },
 )
