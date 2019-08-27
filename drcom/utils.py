@@ -8,17 +8,7 @@ from hashlib import md5
 
 class Namespace:
     pass
-
-
-class ChallengeException(Exception):
-    def __init__(self):
-        pass
-
-
-class LoginException(Exception):
-    def __init__(self):
-        pass
-
+    
 
 class RuntimeCounter:
     """记录运行次数, 若达到限制则终止

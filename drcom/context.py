@@ -10,9 +10,9 @@ import struct
 import sys
 import time
 
-from .utils import (ChallengeException, LoginException, RuntimeCounter,
-                    checksum, daemon, dump, getIP, getMacAdress, md5sum, ror,
+from .utils import (checksum, daemon, dump, getIP, getMacAdress, md5sum, ror,
                     showBytes)
+
 
 class DrcomContext:
     """Drcom 运行时上下文
@@ -38,22 +38,23 @@ class DrcomContext:
     :param bytes SALT:
     :param bytes ROR_VERSION:
     """
+
     def __init__(self,
-        server: str,
-        username: str,
-        password: str,
-        mac: int,
-        host_ip: str,
-        host_name: str,
-        host_os: str,
-        dhcp: str,
-        dns: str,
-        CONTROL_CHECK_STATUS: bytes,
-        ADAPTER_NUM: bytes,
-        IP_DOG: bytes,
-        AUTH_VERSION: bytes,
-        SALT: bytes,
-        ROR_VERSION: bytes,):
+                 server: str,
+                 username: str,
+                 password: str,
+                 mac: int,
+                 host_ip: str,
+                 host_name: str,
+                 host_os: str,
+                 dhcp: str,
+                 dns: str,
+                 CONTROL_CHECK_STATUS: bytes,
+                 ADAPTER_NUM: bytes,
+                 IP_DOG: bytes,
+                 AUTH_VERSION: bytes,
+                 SALT: bytes,
+                 ROR_VERSION: bytes,):
         """初始化上下文
 
         :param str server:      Drcom 认证服务器的地址
@@ -87,7 +88,8 @@ class DrcomContext:
         self.AUTH_VERSION = AUTH_VERSION
         self.SALT = SALT
         self.ROR_VERSION = ROR_VERSION
-        self.AUTH_INFO  = None # 在 login 阶段初始化
+        self.AUTH_INFO = None  # 在 login 阶段初始化
+
 
 class Drcom:
     """
