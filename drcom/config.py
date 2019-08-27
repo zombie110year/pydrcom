@@ -53,6 +53,7 @@ class DrcomConfig:
                 "dns": "8.8.8.8",           # str
             },
             "core": {
+                "SERVER_PORT": 61440,   # 认证服务器端口
                 "CONTROL_CHECK_STATUS": b"",    # bytes
                 "ADAPTER_NUM": b"",             # bytes
                 "IP_DOG": b"",                  # bytes
