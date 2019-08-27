@@ -76,6 +76,8 @@ class DrcomConfig:
     def dump(self, file: Path):
         file.write_text(self.dumps(), encoding="utf-8")
 
+    def __getitem__(self, key):
+        return self.data[key]
 
 class SetFilesPathAction(Action):
     """设置 dest 为 Path 对象
