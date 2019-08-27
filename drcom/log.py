@@ -51,14 +51,14 @@ class Message:
         :param bool data: 是否显示原始字节
         :param bool color: 是否返回 ASCII 着色
         """
-        string = "{lco}{time}:: {msg}"
+        string = "{lco} {time}:: {msg}"
         cmap = {
             "msg": self.msg,
             "time": strftime("%Y-%m-%d %H:%M:%S", localtime(self.time)),
             "lco": self.CHARS[self.level],
         }
         if kw.get("data", False):
-            string += "{dco}{data}{co0}"
+            string += " {dco}{data}{co0}"
             cmap.update({
                 "dco": "",
                 "data": repr(self.data),
@@ -66,7 +66,7 @@ class Message:
             })
         if kw.get("color", False):
             cmap.update({
-                "lco": f"\x1b[3{self.COLORS[self.level]};7m{self.CHARS[self.level]}\x1b[0m",
+                "lco": f"\x1b[3{self.COLORS[self.level]}m{self.CHARS[self.level]}\x1b[0m",
                 "dco": f"\x1b[32m",
                 "co0": "\x1b[0m"
             })

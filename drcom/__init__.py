@@ -23,7 +23,7 @@ def main():
     elif args.subcmd == "log":
         reader = LogReader(args.LEVEL)
         for m in reader.iter():
-            print(m.terminal(color=True, data=True), end="")
+            print(m.terminal(color=args.color, data=args.show_data), end="")
             if input() == "q":
                 break
     elif args.subcmd == "analyse":
