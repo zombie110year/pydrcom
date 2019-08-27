@@ -61,7 +61,7 @@ class DrcomConfig:
                 "AUTH_VERSION": b"",            # bytes
                 "KEEP_ALIVE_VERSION": b"",      # bytes
                 "SALT": b"",                    # bytes
-                "ROR_VERSION": b"",             # bytes
+                "ROR_VERSION": False,           # bool
             }
         }
 
@@ -69,7 +69,7 @@ class DrcomConfig:
         """从 TOML 格式的字符串中加载配置
         """
         self.data = toml.loads(string)
-        for key in self.data["core"]:
+        for key in {"CONTROL_CHECK_STATUS", "ADAPTER_NUM", "IP_DOG", "AUTH_VERSION", "KEEP_ALIVE_VERSION", "SALT"}:
             self.data["core"][key] = (lambda b: bytes(
                 bytearray(b)))(self.data["core"][key])
         return self

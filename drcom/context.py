@@ -22,7 +22,7 @@ class DrcomContext:
     :param bytes AUTH_VERSION:
     :param bytes SALT:
     :param bytes KEEP_ALIVE_VERSION:
-    :param bytes ROR_VERSION:
+    :param bool ROR_VERSION:
     """
 
     def __init__(self,
@@ -42,7 +42,7 @@ class DrcomContext:
                  AUTH_VERSION: bytes,
                  SALT: bytes,
                  KEEP_ALIVE_VERSION: bytes,
-                 ROR_VERSION: bytes,):
+                 ROR_VERSION: bool,):
         """初始化上下文
 
         :param str server:      Drcom 认证服务器的地址
