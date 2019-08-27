@@ -79,10 +79,12 @@ class DrcomApp:
         -   :meth:`sendLogin`
         """
         while True:
-            self.challenge()
             try:
+                self.challenge()
                 self.sendLogin()
             except s.timeout:
+                continue
+            except ChallengeException:
                 continue
             except LoginException:
                 continue
@@ -102,20 +104,14 @@ class DrcomApp:
         -   context.SALT
         """
         rand = time.time() + random.randint(0xf, 0xff)
-        while True:
-            pack = struct.pack("<H", int(rand) % 0xffff)
-            self.socket.sendto(
-                b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
-                (self.drcom["server"], self.drcom["server_port"])
-            )
-            try:
-                data, address = self.socket.recvfrom(1024)
-            except s.timeout:
-                continue
-            if address == (self.drcom["server"], self.drcom["server_port"]):
-                break
-            if data[:1] != b'\x02':
-                raise ChallengeException()
+        pack = struct.pack("<H", int(rand) % 0xffff)
+        self.socket.sendto(
+            b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
+            (self.drcom["server"], self.drcom["server_port"])
+        )
+        data, address = self.socket.recvfrom(1024)
+        if data[:1] != b'\x02':
+            raise ChallengeException()
 
         self.context.SALT = data[4:8]
 
@@ -138,10 +134,7 @@ class DrcomApp:
         self.socket.sendto(self.makeLoginPacket(),
                            (self.drcom["server"], self.drcom["server_port"])
                            )
-        try:
-            data, address = self.socket.recvfrom(1024)
-        except s.timeout:
-            raise s.timeout
+        data, address = self.socket.recvfrom(1024)
         if address == (self.drcom["server"], self.drcom["server_port"]):
             if data[:1] == b'\x04':
                 self.context.AUTH_INFO = data[23:39]
@@ -357,6 +350,8 @@ class DrcomApp:
                 self.keepAlive1()
             except KeepAliveException:
                 continue
+            except s.timeout:
+                continue
             self.keepAlive2()
             time.sleep(self.drcom["keep_alive_interval"])
             break
@@ -386,10 +381,7 @@ class DrcomApp:
         data += b'\x00\x00\x00\x00'
         self.socket.sendto(
             data, (self.drcom["server"], self.drcom["server_port"]))
-        try:
-            data, address = self.socket.recvfrom(1024)
-        except s.timeout:
-            raise s.timeout
+        data, address = self.socket.recvfrom(1024)
         if data[:1] != b'\x07':
             raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
 
