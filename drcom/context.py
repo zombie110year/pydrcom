@@ -1,19 +1,3 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import binascii
-import platform
-import random
-import re
-import socket
-import struct
-import sys
-import time
-
-from .utils import (checksum, daemon, dump, getIP, getMacAdress, md5sum, ror,
-                    showBytes)
-
-
 class DrcomContext:
     """Drcom 运行时上下文
 
