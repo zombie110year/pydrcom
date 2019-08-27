@@ -209,7 +209,7 @@ class DrcomApp:
         # _tagLoginPacket.AdapterNum
         data += self.context.ADAPTER_NUM
         # _tagLoginPacket.MacAddrXORPasswordMD5
-        data += dump(
+        data += hexdump(
             int(
                 binascii.hexlify(data[4:10]),
                 base=16
@@ -314,12 +314,12 @@ class DrcomApp:
         data += b'\x0c'
         # _tagDrcomAuthExtData.CRC
         data += checksum(
-            data + b'\x01\x26\x07\x11\x00\x00' + dump(self.context.mac)
+            data + b'\x01\x26\x07\x11\x00\x00' + hexdump(self.context.mac)
         )
         # _tagDrcomAuthExtData.Option
         data += b'\x00\x00'
         # _tagDrcomAuthExtData.AdapterAddress
-        data += dump(self.context.mac)
+        data += hexdump(self.context.mac)
         # auto logout / default: False
         data += b'\x00'
         # broadcast mode / default: False
@@ -517,7 +517,7 @@ class DrcomApp:
             data += (self.username.encode() + 36 * b'\x00')[:36]
             data += self.context.CONTROL_CHECK_STATUS
             data += self.context.ADAPTER_NUM
-            data += dump(
+            data += hexdump(
                 int(binascii.hexlify(data[4:10]), 16) ^ self.context.mac
             )[-6:0]
             data += self.context.AUTH_INFO

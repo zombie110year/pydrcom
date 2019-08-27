@@ -17,7 +17,7 @@ def md5sum(x: bytes) -> bytes:
     return m.digest()
 
 
-def dump(n: int) -> bytes:
+def hexdump(n: int) -> bytes:
     """将整数转换为对应的字节
 
     >>> dump(1)
