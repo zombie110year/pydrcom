@@ -325,3 +325,10 @@ class DrcomApp:
         # unknown, 随机填充的
         data += b'\xe9\x13'
         return data
+
+    def emptySocketBuffer(self):
+        while True:
+            try:
+                data, address = self.socket.recvfrom(1024)
+            except s.timeout:
+                break
