@@ -405,24 +405,43 @@ class DrcomApp:
         修改属性
 
         -   srv_num
+        -   tail
 
         调用函数
 
         -   :meth:`makeKeepAlivePacket`
         """
+        # Step 1
         packet = self.makeKeepAlivePacket(1, True)
         self.socket.sendto(
             packet, (self.drcom["server"], self.drcom["server_port"]))
-        try:
-            data, _ = self.socket.recvfrom(1024)
-        except s.timeout:
-            raise s.timeout
+        data, _ = self.socket.recvfrom(1024)
         if (
             data.startswith(b'\x07\x00\x28\x00') or
             data.startswith(b'\x07' + bytes([self.srv_num]) + b'\x28\x00') or
             data[:1] == b'\x07' and data[2:3] == b'\x10'
         ):
             self.srv_num += 1
+
+        # Step 2
+        packet = self.makeKeepAlivePacket(1, False)
+        self.socket.sendto(
+            packet, (self.drcom["server"], self.drcom["server_port"]))
+        data, _ = self.socket.recvfrom(1024)
+        if data[:1] != b'\x07':
+            raise KeepAliveException(r"data[:1] != b'\x07'")
+        else:
+            self.srv_num += 1
+            self.tail = data[16:20]
+
+        # Step 3
+        packet = self.makeKeepAlivePacket(3, False)
+        data, _ = self.socket.recvfrom(1024)
+        if data[:1] != b'\x07':
+            raise KeepAliveException(r"data[:1] != b'\x07'")
+        else:
+            self.srv_num += 1
+            self.tail = data[16:20]
 
     def makeKeepAlivePacket(self, type_, first):
         """构建 keepalive 包
