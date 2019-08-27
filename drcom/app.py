@@ -64,6 +64,7 @@ class DrcomApp:
             IP_DOG=self.core["IP_DOG"],
             AUTH_VERSION=self.core["AUTH_VERSION"],
             SALT=self.core["SALT"],
+            KEEP_ALIVE_VERSION=self.core["KEEP_ALIVE_VERSION"],
             ROR_VERSION=self.core["ROR_VERSION"],
         )
         return dc
@@ -345,6 +346,7 @@ class DrcomApp:
 
         -   :meth:`keepAlive1`
         -   :meth:`keepAlive2`
+        -   :meth:`keepAliveStable`
         """
 
         self.srv_num = 0
@@ -356,6 +358,8 @@ class DrcomApp:
                 continue
             self.keepAlive2()
             time.sleep(self.drcom["keep_alive_interval"])
+            break
+        self.keepAliveStable()
 
     def keepAlive1(self):
         """保持连接第一阶段

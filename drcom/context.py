@@ -36,6 +36,7 @@ class DrcomContext:
     :param bytes IP_DOG:
     :param bytes AUTH_VERSION:
     :param bytes SALT:
+    :param bytes KEEP_ALIVE_VERSION:
     :param bytes ROR_VERSION:
     """
 
@@ -54,6 +55,7 @@ class DrcomContext:
                  IP_DOG: bytes,
                  AUTH_VERSION: bytes,
                  SALT: bytes,
+                 KEEP_ALIVE_VERSION: bytes,
                  ROR_VERSION: bytes,):
         """初始化上下文
 
@@ -71,6 +73,7 @@ class DrcomContext:
         :param bytes IP_DOG:
         :param bytes AUTH_VERSION:
         :param bytes SALT:
+        :param bytes KEEP_ALIVE_VERSION:
         :param bytes ROR_VERSION:
         """
         self.server = server
@@ -87,6 +90,7 @@ class DrcomContext:
         self.IP_DOG = IP_DOG
         self.AUTH_VERSION = AUTH_VERSION
         self.SALT = SALT
+        self.KEEP_ALIVE_VERSION = KEEP_ALIVE_VERSION
         self.ROR_VERSION = ROR_VERSION
         self.AUTH_INFO = None  # 在 login 阶段初始化
 
