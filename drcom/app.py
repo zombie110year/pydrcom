@@ -1,13 +1,13 @@
+import random
+import socket as s
+import struct
+import time
+from sys import exit
+
 from .config import DrcomConfig
 from .context import DrcomContext
-import socket as s
-
-import time
-import random
-import struct
 from .exceptions import *
 from .utils import *
-from sys import exit
 
 
 class DrcomApp:
