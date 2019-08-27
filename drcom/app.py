@@ -8,6 +8,7 @@ from .config import DrcomConfig
 from .context import DrcomContext
 from .exceptions import *
 from .utils import *
+from .log import LogWriter
 
 
 class DrcomApp:
@@ -42,6 +43,7 @@ class DrcomApp:
                 continue
         else:
             raise BindPortException("从 60000 到 65536 间端口已耗尽")
+        self.logger = LogWriter(self.application["logging"])
 
     def run(self):
         """开始运行"""
@@ -106,15 +108,20 @@ class DrcomApp:
         """
         rand = time.time() + random.randint(0xf, 0xff)
         pack = struct.pack("<H", int(rand) % 0xffff)
+        packet = b'\x01\x02' + pack + b'\x09' + b'\x00' * 15
+        self.logger.info("challenge sent", packet)
         self.socket.sendto(
-            b'\x01\x02' + pack + b'\x09' + b'\x00' * 15,
+            packet,
             (self.context.server, self.context.port)
         )
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("challenge recv", data)
         if data[:1] != b'\x02':
+            self.logger.warn("challenge recv err, != 02", data)
             raise ChallengeException(r"data[:1] != b'\x02'")
 
         self.context.SALT = data[4:8]
+        self.logger.debug("SALT modified in challenge", self.context.SALT)
 
     def sendLogin(self):
         """发送登录数据
@@ -132,12 +139,16 @@ class DrcomApp:
 
         -   :meth:`makePacket`
         """
-        self.socket.sendto(self.makeLoginPacket(),
-                           (self.context.server, self.context.port))
+        packet = self.makeLoginPacket()
+        self.logger.info("login sent", packet)
+        self.socket.sendto(packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("login recv", data)
         if data[:1] == b'\x04':
             self.context.AUTH_INFO = data[23:39]
+            self.logger.debug("AUTH_INFO set in sendLogin", self.context.AUTH_INFO)
         else:
+            self.logger.warn("login fail, != 04", data)
             raise LoginException(r"data[:1] != b'\x04'")
 
     def makeLoginPacket(self) -> bytes:
@@ -378,10 +389,13 @@ class DrcomApp:
         data += b'\x00\x00\x00'
         data += struct.pack("!H", int(time.time()) % 0xffff)
         data += b'\x00\x00\x00\x00'
+        self.logger.info("keepAlive1 sent", data)
         self.socket.sendto(
             data, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("keepAlive1 recv", data)
         if data[:1] != b'\x07':
+            self.logger.warn("keepAlive1 err, != 07", data)
             raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
 
     def keepAlive2(self):
@@ -405,36 +419,49 @@ class DrcomApp:
         """
         # Step 1
         packet = self.makeKeepAlivePacket(1, True)
+        self.logger.info("keepAlive2 01 sent", packet)
         self.socket.sendto(
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("keepAlive2 01 recv", data)
         if (
             data.startswith(b'\x07\x00\x28\x00') or
             data.startswith(b'\x07' + bytes([self.srv_num]) + b'\x28\x00') or
             data[:1] == b'\x07' and data[2:3] == b'\x10'
         ):
             self.srv_num += 1
+            self.logger.debug("srv_num add, keepAlive2 01", bytes([self.srv_num]))
 
         # Step 2
         packet = self.makeKeepAlivePacket(1, False)
+        self.logger.info("keepAlive2 02 sent", packet)
         self.socket.sendto(
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("keepAlive2 02 recv", data)
         if data[:1] != b'\x07':
+            self.logger.warn("keepAlive2 02 err, != 07", data)
             raise KeepAliveException(r"data[:1] != b'\x07'")
         else:
             self.srv_num += 1
             self.tail = data[16:20]
+            self.logger.debug("srv_num add keepAlive2 02", bytes([self.srv_num]))
+            self.logger.debug("tail mod in keepAlive2 02", self.tail)
 
         # Step 3
         packet = self.makeKeepAlivePacket(3, False)
+        self.logger.info("keepAlive2 03 sent", packet)
         self.socket.sendto(packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("keepAlive2 03 recv", data)
         if data[:1] != b'\x07':
+            self.logger.warn("keepAlive2 03 err, != 07", data)
             raise KeepAliveException(r"data[:1] != b'\x07'")
         else:
             self.srv_num += 1
             self.tail = data[16:20]
+            self.logger.debug("srv_num add keepAlive2 03", bytes([self.srv_num]))
+            self.logger.debug("tail mod in keepAlive2 03", self.tail)
 
     def makeKeepAlivePacket(self, type_, first):
         """构建 keepalive 包
@@ -484,19 +511,27 @@ class DrcomApp:
         """
         # Step 1
         packet = self.makeKeepAlivePacket(1, False)
+        self.logger.info("keepAliveStable 01 sent", packet)
         self.socket.sendto(
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
+        self.logger.info("keepAliveStable 01 recv", data)
         self.srv_num += 1
         self.tail = data[16:20]
+        self.logger.debug("srv_num add keepAliveStable 01", bytes([self.srv_num]))
+        self.logger.debug("tail mod in keepAliveStable 01", self.tail)
 
         # Step 2
         packet = self.makeKeepAlivePacket(3, False)
+        self.logger.info("keepAliveStable 02 sent", packet)
         self.socket.sendto(
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
-        self.tail = data[16:20]
+        self.logger.info("keepAliveStable 02 recv", data)
         self.srv_num = (self.srv_num + 1) % 127
+        self.tail = data[16:20]
+        self.logger.debug("srv_num reset keepAliveStable 02", bytes([self.srv_num]))
+        self.logger.debug("tail mod in keepAliveStable 02", self.tail)
 
     def logout(self):
         self.challenge()
