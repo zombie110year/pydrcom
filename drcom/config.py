@@ -31,6 +31,9 @@ class DrcomConfig:
             "application": {
                 "logging": 10,              # int
                 "bind_ip": "0.0.0.0",       # 客户端必须监听网卡上所有接口
+                "login_retry": 3600,        # 登陆失败时重试间隔
+                "timeout_retry": 60,        # 连接超时重试间隔
+                "challenge_retry": 10,
             },
             "drcom": {
                 "keep_alive_interval": 15,  # int
@@ -59,7 +62,7 @@ class DrcomConfig:
     def loads(self, string: str):
         """从 TOML 格式的字符串中加载配置
         """
-        self.data = toml.loads(string)
+        self.data.update(toml.loads(string))
         for key in {"CONTROL_CHECK_STATUS", "ADAPTER_NUM", "IP_DOG", "AUTH_VERSION", "KEEP_ALIVE_VERSION", "SALT"}:
             self.data["core"][key] = (lambda b: bytes(
                 bytearray(b)))(self.data["core"][key])
