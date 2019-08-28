@@ -47,9 +47,15 @@ class DrcomApp:
 
     def run(self):
         """开始运行"""
-        self.login()
-        self.emptySocketBuffer()
-        self.keepAlive()
+        while True:
+            try:
+                self.login()
+                self.emptySocketBuffer()
+                self.keepAlive()
+            except s.timeout:
+                time.sleep(60)
+                continue
+
 
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(
@@ -85,14 +91,11 @@ class DrcomApp:
             try:
                 self.challenge()
                 self.sendLogin()
-            except s.timeout:
-                continue
             except ChallengeException:
                 continue
             except LoginException:
                 continue
-            finally:
-                break
+            break
 
     def challenge(self):
         """尝试连接
