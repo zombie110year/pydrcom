@@ -125,7 +125,7 @@ class LogWriter(Logger):
             f"SELECT type, name FROM sqlite_master WHERE name='{TABLE_NAME}'")
         if not table_exists:
             c.executescript(
-                f"""CREATE TABLE {TABLE_NAME} (time REAL PRIMARY KEY, level INTEGER, msg TEXT, data BLOB);""")
+                f"""CREATE TABLE {TABLE_NAME} (time REAL, level INTEGER, msg TEXT, data BLOB);""")
             self.session.commit()
         # 检查旧数据库, 并清除 7 天前的数据库
         for i in tempdir.glob("*.log"):
