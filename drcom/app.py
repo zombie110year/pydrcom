@@ -94,6 +94,9 @@ class DrcomApp:
             except ChallengeException:
                 continue
             except LoginException:
+                # 要么是账号资费问题
+                # 要么是非登录时间
+                time.sleep(3600)
                 continue
             break
 
