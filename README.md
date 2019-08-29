@@ -57,4 +57,4 @@ b'\x01\xfe'
 
 drcom: [GPLv3](LICENSE)
 
-toml: [MIT](toml/LICENSE) [HOMEPAGE](https://github.com/uiri/toml)
+toml: [MIT](drcom/toml/LICENSE) [HOMEPAGE](https://github.com/uiri/toml)

@@ -9,7 +9,8 @@ from os import environ
 from pathlib import Path
 from platform import system
 from sys import exit
-import toml
+from .toml import loads as TOMLloads
+from .toml import dumps as TOMLdumps
 
 from .utils import getIP, getMacAdress
 
@@ -62,7 +63,7 @@ class DrcomConfig:
     def loads(self, string: str):
         """从 TOML 格式的字符串中加载配置
         """
-        self.data.update(toml.loads(string))
+        self.data.update(TOMLloads(string))
         for key in {"CONTROL_CHECK_STATUS", "ADAPTER_NUM", "IP_DOG", "AUTH_VERSION", "KEEP_ALIVE_VERSION", "SALT"}:
             self.data["core"][key] = (lambda b: bytes(
                 bytearray(b)))(self.data["core"][key])
@@ -77,7 +78,7 @@ class DrcomConfig:
         return self.loads(content)
 
     def dumps(self) -> str:
-        return toml.dumps(self.data)
+        return TOMLdumps(self.data)
 
     def dump(self, file: Path):
         file.write_text(self.dumps(), encoding="utf-8")
