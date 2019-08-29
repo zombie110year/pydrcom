@@ -22,10 +22,13 @@ def main():
         app.run()
     elif args.subcmd == "log":
         reader = LogReader(args.LEVEL)
-        for m in reader.iter():
-            print(m.terminal(color=args.color, data=args.show_data), end="")
-            if input() == "q":
-                break
+        if args.to_csv:
+            reader.to_csv(Path("today-log.csv"))
+        else:
+            for m in reader.iter():
+                print(m.terminal(color=args.color, data=args.show_data), end="")
+                if input() == "q":
+                    break
     elif args.subcmd == "analyse":
         path = Path(args.FILE)
         conf = analysePcapng(path)

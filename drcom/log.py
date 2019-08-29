@@ -73,6 +73,15 @@ class Message:
 
         return string.format(**cmap)
 
+    def to_csv(self):
+        """格式化为 csv 格式"""
+        string = "{level:2},{time},{msg},{data}"
+        return string.format(
+            level=self.level,
+            time=strftime("%Y-%m-%d %H:%M:%S", localtime(self.time)),
+            msg=self.msg,
+            data=repr(self.data),
+        )
 
 class Logger:
     max_keep = float(604800)  # 7 天
@@ -180,3 +189,17 @@ class LogReader(Logger):
             ) ORDER BY time DESC;""")
         for time, level, msg, data in result:
             yield Message(time, level, msg, data)
+
+    def to_csv(self, path: Path):
+        """将本日日志保存至文件"""
+        c = self.session.cursor()
+        result = c.execute(
+            f"""SELECT time, level, msg, data FROM (
+                    SELECT time, level, msg, data FROM {TABLE_NAME}
+                    WHERE level>={self.level}
+            ) ORDER BY time ASC;""")
+        with path.open("wt", encoding="utf-8") as file:
+            file.write("level,time,msg,data\n")
+            for m in self.iter():
+                file.write(m.to_csv())
+                file.write("\n")
