@@ -63,7 +63,9 @@ class DrcomConfig:
     def loads(self, string: str):
         """从 TOML 格式的字符串中加载配置
         """
-        self.data.update(TOMLloads(string))
+        filedata = TOMLloads(string)
+        for table in self.data:
+            self.data[table].update(filedata[table])
         for key in {"CONTROL_CHECK_STATUS", "ADAPTER_NUM", "IP_DOG", "AUTH_VERSION", "KEEP_ALIVE_VERSION", "SALT"}:
             self.data["core"][key] = (lambda b: bytes(
                 bytearray(b)))(self.data["core"][key])
