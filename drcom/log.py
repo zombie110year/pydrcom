@@ -83,6 +83,7 @@ class Message:
             data=repr(self.data),
         )
 
+
 class Logger:
     max_keep = float(604800)  # 7 天
 
@@ -166,17 +167,18 @@ class LogWriter(Logger):
 
 
 class LogReader(Logger):
-    def __init__(self, level=LEVEL_DEBUG):
-        self.database = Path
-        self.session = s.Connection
-        self.level = level
-
-        # 每天都创建一个新的数据库
+    def __init__(self, date: str, level):
         tempdir = Path(gettempdir()) / "drcom" / "log"
-        now = time()
-        self.database = tempdir / \
-            f"""{strftime("%Y-%m-%d", localtime(now))}.log"""
-        self.session = s.connect(str(self.database.absolute()))
+        if date is None:
+            now = time()
+            self.database = tempdir / \
+                f"{strftime('%Y-%m-%d', localtime(now))}.log"
+            if not self.database.exists():
+                raise FileNotFoundError("今天的日志没有创建")
+        else:
+            self.database = tempdir / f"{date}.log"
+        self.session = s.Connection(str(self.database.absolute()))
+        self.level = level
 
     def iter(self) -> Message:
         """按时间顺序从晚到早

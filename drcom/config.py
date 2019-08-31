@@ -120,6 +120,7 @@ def getParser() -> ArgumentParser:
     log.add_argument("--show-data", help="是否显示原始数据", action="store_true", default=False)
     log.add_argument("--color", help="是否打印彩色输出", action="store_true", default=False)
     log.add_argument("--to-csv", help="将日志保存为 CSV 文件", action="store_true", default=False)
+    log.add_argument("--date", help="查看哪一天的日志", default=None)
     analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
     analyse.add_argument("FILE", help="要解析的抓包文件")
     return parser

@@ -21,7 +21,7 @@ def main():
         app = DrcomApp(conf)
         app.run()
     elif args.subcmd == "log":
-        reader = LogReader(args.LEVEL)
+        reader = LogReader(args.date, args.LEVEL)
         if args.to_csv:
             reader.to_csv(Path("today-log.csv"))
         else:
