@@ -124,7 +124,7 @@ class DrcomApp:
         self.logger.info("challenge recv", data)
         if data[:1] != b'\x02':
             self.logger.warn("challenge recv err, != 02", data)
-            raise ChallengeException(r"data[:1] != b'\x02'")
+            raise ChallengeException(rf"{data[:1]} != b'\x02'")
 
         self.context.SALT = data[4:8]
         self.logger.debug("SALT modified in challenge", self.context.SALT)
@@ -156,7 +156,7 @@ class DrcomApp:
                               self.context.AUTH_INFO)
         else:
             self.logger.warn("login fail, != 04", data)
-            raise LoginException(r"data[:1] != b'\x04'")
+            raise LoginException(rf"{data[:1]} != b'\x04'")
 
     def makeLoginPacket(self) -> bytes:
         """构建 login 包
@@ -407,7 +407,7 @@ class DrcomApp:
         self.logger.info("keepAlive1 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive1 err, != 07", data)
-            raise KeepAliveException(r"keepAlive1 data[:1] != b'\x07'")
+            raise KeepAliveException(rf"keepAlive1 {data[:1]} != b'\x07'")
 
     def keepAlive2(self):
         """保持连接第二阶段
@@ -453,7 +453,7 @@ class DrcomApp:
         self.logger.info("keepAlive2 02 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive2 02 err, != 07", data)
-            raise KeepAliveException(r"data[:1] != b'\x07'")
+            raise KeepAliveException(rf"{data[:1]} != b'\x07'")
         else:
             self.srv_num += 1
             self.tail = data[16:20]
@@ -469,7 +469,7 @@ class DrcomApp:
         self.logger.info("keepAlive2 03 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive2 03 err, != 07", data)
-            raise KeepAliveException(r"data[:1] != b'\x07'")
+            raise KeepAliveException(rf"{data[:1]} != b'\x07'")
         else:
             self.srv_num += 1
             self.tail = data[16:20]
