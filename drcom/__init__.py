@@ -1,3 +1,4 @@
+from io import StringIO
 from pathlib import Path
 
 from .analyse import analysePcapng
@@ -21,14 +22,16 @@ def main():
         app = DrcomApp(conf)
         app.run()
     elif args.subcmd == "log":
-        reader = LogReader(args.date, args.LEVEL)
+        reader = LogReader(args.DATE, args.level)
         if args.to_csv:
             reader.to_csv(Path("today-log.csv"))
         else:
+            buffer = StringIO()
             for m in reader.iter():
-                print(m.terminal(color=args.color, data=args.show_data), end="")
-                if input() == "q":
-                    break
+                buffer.write(m.terminal(color=args.color, data=args.show_data))
+                buffer.write("\n")
+            buffer.seek(0)
+            print(buffer.read())
     elif args.subcmd == "analyse":
         path = Path(args.FILE)
         conf = analysePcapng(path)

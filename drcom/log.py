@@ -7,6 +7,8 @@ from time import localtime, mktime, strftime, strptime, time
 import json
 
 TABLE_NAME = "log"
+# 一天的秒数
+SECs_ONE_DAY = 86400.0
 LEVEL_VERBOSE = 0
 LEVEL_DEBUG = 10
 LEVEL_INFO = 20
@@ -86,13 +88,14 @@ class Message:
 
 class Logger:
     max_keep = float(604800)  # 7 天
+    database = str(Path(gettempdir()) / "drcom" / "log" / "drcom-log.db")
 
 
 class LogWriter(Logger):
     """SQL Logger
 
-    将日志记录在 sqlite3 数据库中。文件存储为 [temp]/drcom/log/*.log。
-    每一天都创建一个名称类似于 2019-08-08.log 的数据库文件，在其中创建表 log。
+    将日志记录在 sqlite3 数据库中。文件存储为 [temp]/drcom/log/drcom-log.db,
+    表名为 log.
 
     .. code-block:: sql
 
@@ -117,31 +120,8 @@ class LogWriter(Logger):
     """
 
     def __init__(self, level=LEVEL_DEBUG):
-        self.database = Path
-        self.session = s.Connection
+        self.session = s.connect(self.database)
         self.level = level
-
-        # 每天都创建一个新的数据库
-        tempdir = Path(gettempdir()) / "drcom" / "log"
-        now = time()
-        self.database = tempdir / \
-            f"""{strftime("%Y-%m-%d", localtime(now))}.log"""
-        if not self.database.parent.exists():
-            self.database.parent.mkdir(parents=True)
-        self.database.touch()
-        self.session = s.connect(str(self.database.absolute()))
-        c = self.session.cursor()
-        table_exists = ('table', 'log') in c.execute(
-            f"SELECT type, name FROM sqlite_master WHERE name='{TABLE_NAME}'")
-        if not table_exists:
-            c.executescript(
-                f"""CREATE TABLE {TABLE_NAME} (time REAL, level INTEGER, msg TEXT, data BLOB);""")
-            self.session.commit()
-        # 检查旧数据库, 并清除 7 天前的数据库
-        for i in tempdir.glob("*.log"):
-            that = mktime(strptime(i.stem, "%Y-%m-%d"))
-            if now - that > self.max_keep:
-                remove(str(i.absolute()))
 
     def record(self, msg: str, data: bytes, level: int):
         if level >= self.level:
@@ -168,38 +148,27 @@ class LogWriter(Logger):
 
 class LogReader(Logger):
     def __init__(self, date: str, level):
-        tempdir = Path(gettempdir()) / "drcom" / "log"
-        if date is None:
-            now = time()
-            self.database = tempdir / \
-                f"{strftime('%Y-%m-%d', localtime(now))}.log"
-            if not self.database.exists():
-                raise FileNotFoundError("今天的日志没有创建")
-        else:
-            self.database = tempdir / f"{date}.log"
-        self.session = s.Connection(str(self.database.absolute()))
+        """创建日志查询器
+
+        :param str date: 要查询的日志日期，应当为 %Y-%m-%d 格式的字符串
+        :param int level: 要查询的日志等级
+        """
+        self.session = s.Connection(self.database)
         self.level = level
+        self.date = mktime(strptime(date, "%Y-%m-%d"))
 
     def iter(self) -> Message:
         """按时间顺序从晚到早
         """
         c = self.session.cursor()
         result = c.execute(
-            f"""SELECT time, level, msg, data FROM (
-                    SELECT time, level, msg, data FROM {TABLE_NAME}
-                    WHERE level>={self.level}
-            ) ORDER BY time DESC;""")
+            f"""SELECT time, level, msg, data FROM {TABLE_NAME}
+                WHERE level>={self.level} AND time >= {self.date} AND time <= {self.date + SECs_ONE_DAY};""")
         for time, level, msg, data in result:
             yield Message(time, level, msg, data)
 
     def to_csv(self, path: Path):
-        """将本日日志保存至文件"""
-        c = self.session.cursor()
-        result = c.execute(
-            f"""SELECT time, level, msg, data FROM (
-                    SELECT time, level, msg, data FROM {TABLE_NAME}
-                    WHERE level>={self.level}
-            ) ORDER BY time ASC;""")
+        """将目标日期日志保存至文件"""
         with path.open("wt", encoding="utf-8") as file:
             file.write("level,time,msg,data\n")
             for m in self.iter():

@@ -9,9 +9,10 @@ from os import environ
 from pathlib import Path
 from platform import system
 from sys import exit
-from .toml import loads as TOMLloads
-from .toml import dumps as TOMLdumps
+from time import localtime, strftime
 
+from .toml import dumps as TOMLdumps
+from .toml import loads as TOMLloads
 from .utils import getIP, getMacAdress
 
 DEFAULT_CONFIG_FILES = [
@@ -116,11 +117,11 @@ def getParser() -> ArgumentParser:
     )
     stop = cmd.add_parser("stop", description="停止 drcom")
     log = cmd.add_parser("log", description="显示日志")
-    log.add_argument("LEVEL", help="指定浏览的最低日志等级", type=int, default=10, nargs="?")
+    log.add_argument("DATE", help="查看哪一天的日志", default=strftime("%Y-%m-%d", localtime()), nargs="?")
+    log.add_argument("--level", help="指定浏览的最低日志等级", type=int, default=10)
     log.add_argument("--show-data", help="是否显示原始数据", action="store_true", default=False)
     log.add_argument("--color", help="是否打印彩色输出", action="store_true", default=False)
     log.add_argument("--to-csv", help="将日志保存为 CSV 文件", action="store_true", default=False)
-    log.add_argument("--date", help="查看哪一天的日志", default=None)
     analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
     analyse.add_argument("FILE", help="要解析的抓包文件")
     return parser
