@@ -53,6 +53,7 @@ class DrcomApp:
                 self.emptySocketBuffer()
                 self.keepAlive()
             except s.timeout:
+                self.logout()
                 time.sleep(self.application["timeout_retry"])
                 continue
 
@@ -97,6 +98,7 @@ class DrcomApp:
                 # 要么是账号资费问题
                 # 要么是非登录时间
                 time.sleep(self.application["login_retry"])
+                self.logout()
                 continue
             break
 
