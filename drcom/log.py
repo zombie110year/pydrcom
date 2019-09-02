@@ -123,6 +123,17 @@ class LogWriter(Logger):
         self.session = s.connect(self.database)
         self.level = level
 
+        self.initTable()
+
+    def initTable(self):
+        c = self.session.cursor()
+        table_exists = ('table', 'log') in c.execute(
+            f"SELECT type, name FROM sqlite_master WHERE name='{TABLE_NAME}'")
+        if not table_exists:
+            c.executescript(
+                f"""CREATE TABLE {TABLE_NAME} (time REAL, level INTEGER, msg TEXT, data BLOB);""")
+            self.session.commit()
+
     def clean(self):
         """清理超过 7 天的日志
         """
