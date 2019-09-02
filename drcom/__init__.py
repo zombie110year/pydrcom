@@ -1,16 +1,14 @@
-from io import StringIO
 from pathlib import Path
 
-from .analyse import analysePcapng
-from .app import DrcomApp
-from .config import DrcomConfig, getParser
-from .log import LogReader
+from .config import getParser
 
 
 def main():
     parser = getParser()
     args = parser.parse_args()
     if args.subcmd == "start":
+        from .app import DrcomApp
+        from .config import DrcomConfig
         for i in args.config:
             if i.exists():
                 file = i
@@ -22,10 +20,12 @@ def main():
         app = DrcomApp(conf)
         app.run()
     elif args.subcmd == "log":
+        from .log import LogReader
         reader = LogReader(args.DATE, args.level)
         if args.to_csv:
             reader.to_csv(Path("today-log.csv"))
         else:
+            from io import StringIO
             buffer = StringIO()
             for m in reader.iter():
                 buffer.write(m.terminal(color=args.color, data=args.show_data))
@@ -33,6 +33,7 @@ def main():
             buffer.seek(0)
             print(buffer.read())
     elif args.subcmd == "analyse":
+        from .analyse import analysePcapng
         path = Path(args.FILE)
         conf = analysePcapng(path)
         conf.dump(Path("drcom.toml"))
