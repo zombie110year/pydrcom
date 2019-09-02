@@ -37,3 +37,7 @@ def main():
         conf = analysePcapng(path)
         conf.dump(Path("drcom.toml"))
         print("file saved at ./drcom.toml")
+    elif args.subcmd == "clean":
+        from .log import LogWriter
+        logger = LogWriter()
+        logger.clean()

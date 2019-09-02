@@ -124,6 +124,7 @@ def getParser() -> ArgumentParser:
     log.add_argument("--to-csv", help="将日志保存为 CSV 文件", action="store_true", default=False)
     analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
     analyse.add_argument("FILE", help="要解析的抓包文件")
+    clean = cmd.add_parser("clean", description="清理日志")
     return parser
 
 

@@ -123,6 +123,15 @@ class LogWriter(Logger):
         self.session = s.connect(self.database)
         self.level = level
 
+    def clean(self):
+        """清理超过 7 天的日志
+        """
+        timedelta = 7 * SECs_ONE_DAY
+        c = self.session.cursor()
+        c.executescript(f"""DELETE FROM {TABLE_NAME}
+        WHERE time < {time() - timedelta};""")
+        self.session.commit()
+
     def record(self, msg: str, data: bytes, level: int):
         if level >= self.level:
             m = Message(time(), level, msg, data)
@@ -153,7 +162,7 @@ class LogReader(Logger):
         :param str date: 要查询的日志日期，应当为 %Y-%m-%d 格式的字符串
         :param int level: 要查询的日志等级
         """
-        self.session = s.Connection(self.database)
+        self.session = s.connect(self.database)
         self.level = level
         self.date = mktime(strptime(date, "%Y-%m-%d"))
 
