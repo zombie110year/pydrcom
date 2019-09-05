@@ -1,0 +1,11 @@
+[Unit]
+Description=Python 实现的 Drcom 客户端，适用于 D 版
+Requires=network.target
+[Service]
+# 将可执行文件和配置文件复制到对应位置
+ExecStart=/opt/drcom/bin/drcom start -c /opt/drcom/etc/drcom.toml
+ExecReload=/opt/drcom/bin/drcom start -c /opt/drcom/etc/drcom.toml
+ExecStop=/usr/bin/pkill -TERM drcom
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
