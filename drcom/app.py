@@ -53,7 +53,6 @@ class DrcomApp:
                 self.emptySocketBuffer()
                 self.keepAlive()
             except s.timeout:
-                self.logout()
                 time.sleep(self.application["timeout_retry"])
                 continue
 
