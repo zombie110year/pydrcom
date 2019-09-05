@@ -19,6 +19,9 @@ python = "^3.7"
 pyinstaller = "^3.5"
 pylint = "^2.3"
 autopep8 = "^1.4"
+# pyinstaller 在 Windows 平台上的依赖
+pywin32-ctypes = "^0.2.0"
+pefile = "^2019.4"
 
 [[tool.poetry.source]]
 name = "tsinghua"
