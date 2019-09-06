@@ -4,7 +4,6 @@ Requires=network.target
 [Service]
 # 将可执行文件和配置文件复制到对应位置
 ExecStart=/opt/drcom/bin/drcom start -c /opt/drcom/etc/drcom.toml
-ExecReload=/opt/drcom/bin/drcom start -c /opt/drcom/etc/drcom.toml
 ExecStop=/usr/bin/pkill -TERM drcom
 Restart=on-failure
 [Install]
