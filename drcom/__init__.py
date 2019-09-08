@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from .config import DrcomConfig
 from .config import getParser
 
 
@@ -8,7 +9,6 @@ def main():
     args = parser.parse_args()
     if args.subcmd == "start":
         from .app import DrcomApp
-        from .config import DrcomConfig
         for i in args.config:
             if i.exists():
                 file = i
@@ -21,7 +21,18 @@ def main():
         app.run()
     elif args.subcmd == "log":
         from .log import LogReader
-        reader = LogReader(args.DATE, args.level)
+        for i in args.config:
+            if i.exists():
+                file = i
+                break
+        else:
+            raise FileNotFoundError("找不到可用的配置文件")
+        conf = DrcomConfig()
+        conf.load(file)
+        reader = LogReader(args.DATE,
+                           args.level,
+                           max_keep=conf["application"]["log_max_keep"],
+                           database=conf["application"]["log_path"])
         if args.to_csv:
             reader.to_csv(Path("today-log.csv"))
         else:

@@ -87,8 +87,18 @@ class Message:
 
 
 class Logger:
-    max_keep = float(604800)  # 7 天
-    database = str(Path(gettempdir()) / "drcom" / "log" / "drcom-log.db")
+    def __init__(self, max_keep: float = None, database: str = None):
+        """
+        :param float max_keep: 日志最大保存期限，参数应当是 Unix 时间戳
+        :param str database: 日志文件路径
+
+        如果留空或者传入 None， max_keep 会使用默认值 7 天，database
+        则是 {临时目录}/drcom/log/drcom-log.db
+        """
+        # 7 天
+        self.max_keep = float(604800) if max_keep is None else max_keep
+        self.database = str(Path(gettempdir()) / "drcom" / "log" /
+                       "drcom-log.db") if database is None else database
 
 
 class LogWriter(Logger):
@@ -119,7 +129,8 @@ class LogWriter(Logger):
         error,40
     """
 
-    def __init__(self, level=LEVEL_DEBUG):
+    def __init__(self, level=LEVEL_DEBUG, max_keep=None, database=None):
+        super().__init__(max_keep, database)
         self.session = s.connect(self.database)
         self.level = level
 
@@ -167,12 +178,13 @@ class LogWriter(Logger):
 
 
 class LogReader(Logger):
-    def __init__(self, date: str, level):
+    def __init__(self, date: str, level: int, max_keep=None, database=None):
         """创建日志查询器
 
         :param str date: 要查询的日志日期，应当为 %Y-%m-%d 格式的字符串
         :param int level: 要查询的日志等级
         """
+        super().__init__(max_keep, database)
         self.session = s.connect(self.database)
         self.level = level
         self.date = mktime(strptime(date, "%Y-%m-%d"))

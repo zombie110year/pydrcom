@@ -32,6 +32,8 @@ class DrcomConfig:
         self.data = {
             "application": {
                 "logging": 10,              # int
+                "log_path": None,           # str，设定保存日志文件的路径
+                "log_max_keep": float(604800),  # float, 日志最多保存 7 天
                 "bind_ip": "0.0.0.0",       # 客户端必须监听网卡上所有接口
                 "login_retry": 3600,        # 登陆失败时重试间隔
                 "timeout_retry": 60,        # 连接超时重试间隔
@@ -109,19 +111,32 @@ def getParser() -> ArgumentParser:
     start.add_argument(
         "-c", "--config",
         dest="config",
-        help="指定配置文件 优先级 ./drcom.conf > ~/.config/drcom/drcom.conf > /etc/drcom/drcon.conf",
+        help="指定配置文件 优先级 ./drcom.toml > ~/.config/drcom/drcom.toml > /etc/drcom/drcon.toml",
         required=False,
-        metavar="path/to/drcom.conf",
+        metavar="path/to/drcom.toml",
         default=DEFAULT_CONFIG_FILES,
         action=SetFilesPathAction,
     )
     stop = cmd.add_parser("stop", description="停止 drcom")
     log = cmd.add_parser("log", description="显示日志")
-    log.add_argument("DATE", help="查看哪一天的日志", default=strftime("%Y-%m-%d", localtime()), nargs="?")
+    log.add_argument(
+        "-c", "--config",
+        dest="config",
+        help="指定配置文件 优先级 ./drcom.toml > ~/.config/drcom/drcom.toml > /etc/drcom/drcon.toml",
+        required=False,
+        metavar="path/to/drcom.toml",
+        default=DEFAULT_CONFIG_FILES,
+        action=SetFilesPathAction,
+    )
+    log.add_argument("DATE", help="查看哪一天的日志", default=strftime(
+        "%Y-%m-%d", localtime()), nargs="?")
     log.add_argument("--level", help="指定浏览的最低日志等级", type=int, default=10)
-    log.add_argument("--show-data", help="是否显示原始数据", action="store_true", default=False)
-    log.add_argument("--color", help="是否打印彩色输出", action="store_true", default=False)
-    log.add_argument("--to-csv", help="将日志保存为 CSV 文件", action="store_true", default=False)
+    log.add_argument("--show-data", help="是否显示原始数据",
+                     action="store_true", default=False)
+    log.add_argument("--color", help="是否打印彩色输出",
+                     action="store_true", default=False)
+    log.add_argument("--to-csv", help="将日志保存为 CSV 文件",
+                     action="store_true", default=False)
     analyse = cmd.add_parser("analyse", description="解析抓包，生成配置")
     analyse.add_argument("FILE", help="要解析的抓包文件")
     clean = cmd.add_parser("clean", description="清理日志")

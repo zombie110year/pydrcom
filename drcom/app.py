@@ -43,7 +43,9 @@ class DrcomApp:
                 continue
         else:
             raise BindPortException("从 60000 到 65536 间端口已耗尽")
-        self.logger = LogWriter(self.application["logging"])
+        self.logger = LogWriter(level=self.application["logging"],
+                                database=self.application["log_path"],
+                                max_keep=self.application["log_max_keep"])
 
     def run(self):
         """开始运行"""
