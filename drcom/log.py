@@ -3,6 +3,8 @@ from os import remove
 from pathlib import Path
 from tempfile import gettempdir
 from time import localtime, mktime, strftime, strptime, time
+from binascii import hexlify
+from threading import Thread
 
 import json
 
@@ -63,7 +65,7 @@ class Message:
             string += " {dco}{data}{co0}"
             cmap.update({
                 "dco": "",
-                "data": repr(self.data),
+                "data": repr(hexlify(self.data)),
                 "co0": "",
             })
         if kw.get("color", False):
@@ -98,23 +100,13 @@ class Logger:
         # 7 天
         self.max_keep = float(604800) if max_keep is None else max_keep
         self.database = str(Path(gettempdir()) / "drcom" / "log" /
-                       "drcom-log.db") if database is None else database
+                            "drcom-log.log") if database is None else database
 
 
 class LogWriter(Logger):
     """SQL Logger
 
-    将日志记录在 sqlite3 数据库中。文件存储为 [temp]/drcom/log/drcom-log.db,
-    表名为 log.
-
-    .. code-block:: sql
-
-        CREATE TABLE log (
-            time REAL PRIMARY KEY,
-            level INTEGER,
-            msg TEXT,
-            data BLOB
-        );
+    将日志记录在终端中打印，且存储文本文件中。文件存储为 [temp]/drcom/log/drcom-log.log,
 
     :param int level: 最低日志记录等级，只有高于此等级的事件才会被记录。默认为 10
 
@@ -134,17 +126,6 @@ class LogWriter(Logger):
         self.session = s.connect(self.database)
         self.level = level
 
-        self.initTable()
-
-    def initTable(self):
-        c = self.session.cursor()
-        table_exists = ('table', 'log') in c.execute(
-            f"SELECT type, name FROM sqlite_master WHERE name='{TABLE_NAME}'")
-        if not table_exists:
-            c.executescript(
-                f"""CREATE TABLE {TABLE_NAME} (time REAL, level INTEGER, msg TEXT, data BLOB);""")
-            self.session.commit()
-
     def clean(self):
         """清理超过 7 天的日志
         """
@@ -157,9 +138,9 @@ class LogWriter(Logger):
     def record(self, msg: str, data: bytes, level: int):
         if level >= self.level:
             m = Message(time(), level, msg, data)
-            c = self.session.cursor()
-            m.store(c)
-            self.session.commit()
+            print(m.terminal(color=True, data=False))
+            with open(self.database, "at", encoding="utf-8") as log:
+                print(m.terminal(color=False, data=True), file=log)
 
     def verbose(self, msg: str, data: bytes):
         self.record(msg, data, LEVEL_VERBOSE)
