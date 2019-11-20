@@ -56,8 +56,10 @@ class DrcomApp:
                 self.keepAlive()
             except s.timeout:
                 time.sleep(self.application["timeout_retry"])
+                self.logger.warn(r"restart caused by timeout", b"")
                 continue
-            except KeepAliveException:
+            except KeepAliveException as e:
+                self.logger.warn(r"restart caused by keepAliveException", e)
                 continue
 
     def initContext(self) -> DrcomContext:
@@ -412,7 +414,7 @@ class DrcomApp:
         self.logger.info("keepAlive1 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive1 err, != 07", data)
-            raise KeepAliveException
+            raise KeepAliveException(data)
 
     def keepAlive2(self):
         """保持连接第二阶段
@@ -441,7 +443,7 @@ class DrcomApp:
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
             self.logging.warn("keepAlive2 01 error, !=07", data)
-            raise KeepAliveException
+            raise KeepAliveException(data)
         self.logger.info("keepAlive2 01 recv", data)
         if (
             data.startswith(b'\x07\x00\x28\x00') or
@@ -461,7 +463,7 @@ class DrcomApp:
         self.logger.info("keepAlive2 02 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive2 02 err, != 07", data)
-            raise KeepAliveException(rf"{data[:1]} != b'\x07'")
+            raise KeepAliveException(data)
         else:
             self.srv_num += 1
             self.tail = data[16:20]
@@ -477,7 +479,7 @@ class DrcomApp:
         self.logger.info("keepAlive2 03 recv", data)
         if data[:1] != b'\x07':
             self.logger.warn("keepAlive2 03 err, != 07", data)
-            raise KeepAliveException(rf"{data[:1]} != b'\x07'")
+            raise KeepAliveException(data)
         else:
             self.srv_num += 1
             self.tail = data[16:20]
@@ -539,7 +541,7 @@ class DrcomApp:
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
             self.logging.warn("keepAliveStable 01 error, !=07", data)
-            raise KeepAliveException
+            raise KeepAliveException(data)
         self.logger.info("keepAliveStable 01 recv", data)
         self.srv_num += 1
         self.tail = data[16:20] if data[16:20] else b"\x00\x00\x00\x00"
@@ -555,7 +557,7 @@ class DrcomApp:
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
             self.logging.warn("keepAliveStable 02 error, !=07", data)
-            raise KeepAliveException
+            raise KeepAliveException(data)
         self.logger.info("keepAliveStable 02 recv", data)
         self.srv_num = (self.srv_num + 1) % 127
         self.tail = data[16:20]
