@@ -95,7 +95,7 @@ class Logger:
         :param str database: 日志文件路径
 
         如果留空或者传入 None， max_keep 会使用默认值 7 天，database
-        则是 {临时目录}/drcom/log/drcom-log.db
+        则是 {临时目录}/drcom/log/drcom-log.log
         """
         # 7 天
         self.max_keep = float(604800) if max_keep is None else max_keep
@@ -123,17 +123,7 @@ class LogWriter(Logger):
 
     def __init__(self, level=LEVEL_DEBUG, max_keep=None, database=None):
         super().__init__(max_keep, database)
-        self.session = s.connect(self.database)
         self.level = level
-
-    def clean(self):
-        """清理超过 7 天的日志
-        """
-        timedelta = 7 * SECs_ONE_DAY
-        c = self.session.cursor()
-        c.executescript(f"""DELETE FROM {TABLE_NAME}
-        WHERE time < {time() - timedelta};""")
-        self.session.commit()
 
     def record(self, msg: str, data: bytes, level: int):
         if level >= self.level:
@@ -156,34 +146,3 @@ class LogWriter(Logger):
 
     def error(self, msg: str, data: bytes):
         self.record(msg, data, LEVEL_ERROR)
-
-
-class LogReader(Logger):
-    def __init__(self, date: str, level: int, max_keep=None, database=None):
-        """创建日志查询器
-
-        :param str date: 要查询的日志日期，应当为 %Y-%m-%d 格式的字符串
-        :param int level: 要查询的日志等级
-        """
-        super().__init__(max_keep, database)
-        self.session = s.connect(self.database)
-        self.level = level
-        self.date = mktime(strptime(date, "%Y-%m-%d"))
-
-    def iter(self) -> Message:
-        """按时间顺序从晚到早
-        """
-        c = self.session.cursor()
-        result = c.execute(
-            f"""SELECT time, level, msg, data FROM {TABLE_NAME}
-                WHERE level>={self.level} AND time >= {self.date} AND time <= {self.date + SECs_ONE_DAY};""")
-        for time, level, msg, data in result:
-            yield Message(time, level, msg, data)
-
-    def to_csv(self, path: Path):
-        """将目标日期日志保存至文件"""
-        with path.open("wt", encoding="utf-8") as file:
-            file.write("level,time,msg,data\n")
-            for m in self.iter():
-                file.write(m.to_csv())
-                file.write("\n")
