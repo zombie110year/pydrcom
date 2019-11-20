@@ -57,6 +57,8 @@ class DrcomApp:
             except s.timeout:
                 time.sleep(self.application["timeout_retry"])
                 continue
+            except KeepAliveException:
+                continue
 
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(
