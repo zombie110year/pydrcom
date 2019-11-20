@@ -542,7 +542,7 @@ class DrcomApp:
             raise KeepAliveException
         self.logger.info("keepAliveStable 01 recv", data)
         self.srv_num += 1
-        self.tail = data[16:20]
+        self.tail = data[16:20] if data[16:20] else b"\x00\x00\x00\x00"
         self.logger.debug("srv_num add keepAliveStable 01",
                           bytes([self.srv_num]))
         self.logger.debug("tail mod in keepAliveStable 01", self.tail)
