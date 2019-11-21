@@ -59,7 +59,7 @@ class DrcomApp:
                 self.logger.warn(r"restart caused by timeout", b"")
                 continue
             except KeepAliveException as e:
-                self.logger.warn(r"restart caused by keepAliveException", e)
+                self.logger.warn(r"restart caused by keepAliveException", e.args[0])
                 continue
 
     def initContext(self) -> DrcomContext:
