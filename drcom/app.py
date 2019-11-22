@@ -442,7 +442,7 @@ class DrcomApp:
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
-            self.logging.warn("keepAlive2 01 error, !=07", data)
+            self.logger.warn("keepAlive2 01 error, !=07", data)
             raise KeepAliveException(data)
         self.logger.info("keepAlive2 01 recv", data)
         if (
@@ -540,7 +540,7 @@ class DrcomApp:
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
-            self.logging.warn("keepAliveStable 01 error, !=07", data)
+            self.logger.warn("keepAliveStable 01 error, !=07", data)
             raise KeepAliveException(data)
         self.logger.info("keepAliveStable 01 recv", data)
         self.srv_num += 1
@@ -556,7 +556,7 @@ class DrcomApp:
             packet, (self.context.server, self.context.port))
         data, _ = self.socket.recvfrom(1024)
         if data[:1] != b"\x07":
-            self.logging.warn("keepAliveStable 02 error, !=07", data)
+            self.logger.warn("keepAliveStable 02 error, !=07", data)
             raise KeepAliveException(data)
         self.logger.info("keepAliveStable 02 recv", data)
         self.srv_num = (self.srv_num + 1) % 127
