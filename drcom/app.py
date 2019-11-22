@@ -49,18 +49,9 @@ class DrcomApp:
 
     def run(self):
         """开始运行"""
-        while True:
-            try:
-                self.login()
-                self.emptySocketBuffer()
-                self.keepAlive()
-            except s.timeout:
-                time.sleep(self.application["timeout_retry"])
-                self.logger.warn(r"restart caused by timeout", b"")
-                continue
-            except KeepAliveException as e:
-                self.logger.warn(r"restart caused by keepAliveException", e.args[0])
-                continue
+        self.login()
+        self.emptySocketBuffer()
+        self.keepAlive()
 
     def initContext(self) -> DrcomContext:
         dc = DrcomContext(
