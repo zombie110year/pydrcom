@@ -90,12 +90,15 @@ class DrcomApp:
             except ChallengeException:
                 time.sleep(self.application["challenge_retry"])
                 continue
-            except LoginException:
-                # 要么是账号资费问题
-                # 要么是非登录时间
-                time.sleep(self.application["login_retry"])
-                self.logout()
-                continue
+            except LoginException as e:
+                if e.args[0].startswith(b"\x05"):
+                    self.logger.error("你的账号已欠费", data=e.args[0])
+                    sys.exit(-1)
+                else:
+                    # 可能是非登录时间
+                    time.sleep(self.application["login_retry"])
+                    self.logout()
+                    continue
             break
 
     def challenge(self):
@@ -154,7 +157,7 @@ class DrcomApp:
                               self.context.AUTH_INFO)
         else:
             self.logger.warn("login fail, != 04", data)
-            raise LoginException(rf"{data[:1]} != b'\x04'")
+            raise LoginException(data)
 
     def makeLoginPacket(self) -> bytes:
         """构建 login 包
