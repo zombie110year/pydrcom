@@ -91,11 +91,17 @@ class DrcomApp:
                 time.sleep(self.application["challenge_retry"])
                 continue
             except LoginException as e:
-                if e.args[0].startswith(b"\x05"):
+                if e.args[0].startswith(b"\x05\x00\x00\x05\x03"):
+                    self.logger.error("帐号密码错误", data=e.args[0])
+                    sys.exit(-1)
+                elif e.args[0].startswith(b"\x05\x00\x00\x05\x04"):
                     self.logger.error("你的账号已欠费", data=e.args[0])
                     sys.exit(-1)
+                elif e.args[0].startswith(b"\x05\x00\x00\x05\x05"):
+                    self.logger.error("帐号已停机", data=e.args[0])
                 else:
                     # 可能是非登录时间
+                    self.logger.warn("未知错误，尝试重启", data=e.args[0])
                     time.sleep(self.application["login_retry"])
                     self.logout()
                     continue
